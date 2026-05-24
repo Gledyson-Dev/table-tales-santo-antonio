@@ -10,92 +10,107 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import floorPlan from "@/assets/floor-plan.jpg";
+import floorPlan from "@/assets/floor-plan.png";
 
 export const Route = createFileRoute("/")({
   component: Index,
 });
 
-// Posições aproximadas (x%, y%) de cada mesa sobre a imagem do plano de chão.
-const TABLES: { n: number; x: number; y: number }[] = [
-  // Salão superior (Adega)
-  { n: 30, x: 26, y: 6.5 },
-  { n: 40, x: 35, y: 8.5 },
-  { n: 20, x: 46, y: 7 },
-  { n: 31, x: 22, y: 14 },
-  { n: 29, x: 32, y: 14 },
-  { n: 24, x: 40, y: 14 },
-  { n: 21, x: 48, y: 16 },
-  { n: 32, x: 22, y: 19.5 },
-  { n: 28, x: 32, y: 19.5 },
-  { n: 25, x: 41, y: 19.5 },
-  { n: 23, x: 48, y: 22 },
-  { n: 33, x: 22, y: 25 },
-  { n: 46, x: 31, y: 25 },
-  { n: 36, x: 38, y: 25 },
-  { n: 26, x: 44, y: 25 },
-  { n: 34, x: 22, y: 30.5 },
-  { n: 27, x: 30, y: 30.5 },
+type Shape = "square" | "circle";
+type Table = { n: number; x: number; y: number; w?: number; h?: number; shape?: Shape };
 
-  // Coluna central do restaurante
-  { n: 14, x: 42, y: 36.5 },
-  { n: 75, x: 50, y: 36.5 },
-  { n: 12, x: 42, y: 41 },
-  { n: 73, x: 50, y: 41 },
-  { n: 74, x: 57, y: 41 },
-  { n: 11, x: 42, y: 45.5 },
-  { n: 71, x: 50, y: 45.5 },
-  { n: 72, x: 57, y: 45.5 },
-  { n: 16, x: 36, y: 49 },
-  { n: 10, x: 42, y: 50 },
-  { n: 69, x: 50, y: 50 },
-  { n: 70, x: 57, y: 50 },
-  { n: 15, x: 36, y: 54 },
-  { n: 9, x: 42, y: 55 },
-  { n: 67, x: 50, y: 55 },
-  { n: 68, x: 57, y: 55 },
-  { n: 8, x: 42, y: 60.5 },
-  { n: 52, x: 52, y: 62.5 },
+// Posições em % sobre a imagem do plano (1357x1920)
+const TABLES: Table[] = [
+  { n: 30, x: 19.5, y: 4.2, shape: "circle", w: 6, h: 4.2 },
+  { n: 40, x: 31.7, y: 4.7, w: 6, h: 4.2 },
+  { n: 20, x: 45.3, y: 4.2, shape: "circle", w: 6, h: 4.2 },
 
-  // Coluna direita superior
-  { n: 76, x: 67, y: 33 },
-  { n: 78, x: 74, y: 33 },
-  { n: 77, x: 67, y: 36 },
-  { n: 79, x: 74, y: 36 },
-  { n: 80, x: 68, y: 44 },
-  { n: 81, x: 75, y: 44 },
-  { n: 82, x: 69, y: 49.5 },
+  { n: 31, x: 19.5, y: 10.7 },
+  { n: 29, x: 32.8, y: 10.7 },
+  { n: 24, x: 40.2, y: 10.7 },
+  { n: 21, x: 47.2, y: 10.7 },
 
-  // Coluna direita / sala 2
-  { n: 53, x: 72, y: 62 },
-  { n: 54, x: 72, y: 67 },
-  { n: 7, x: 31, y: 65.5 },
-  { n: 6, x: 32, y: 70.5 },
+  { n: 32, x: 19.5, y: 16.1 },
+  { n: 28, x: 32.8, y: 16.1 },
+  { n: 25, x: 40.2, y: 16.1 },
+  { n: 23, x: 47.2, y: 16.1 },
 
-  // Salão inferior
-  { n: 5, x: 39, y: 75.5 },
-  { n: 63, x: 50, y: 75.5 },
-  { n: 64, x: 59, y: 75.5 },
-  { n: 55, x: 69, y: 75.5 },
-  { n: 4, x: 39, y: 79.5 },
-  { n: 62, x: 50, y: 79.5 },
-  { n: 65, x: 59, y: 79.5 },
-  { n: 56, x: 69, y: 79.5 },
-  { n: 3, x: 39, y: 84 },
-  { n: 66, x: 59, y: 84 },
-  { n: 57, x: 69, y: 84 },
-  { n: 61, x: 50, y: 85 },
-  { n: 2, x: 39, y: 89 },
-  { n: 60, x: 53, y: 91.5 },
-  { n: 58, x: 69, y: 91 },
-  { n: 1, x: 39, y: 94 },
-  { n: 59, x: 69, y: 95 },
+  { n: 33, x: 19.5, y: 21.9 },
+  { n: 46, x: 32.8, y: 21.9 },
+  { n: 36, x: 39.8, y: 21.9 },
+  { n: 26, x: 46.8, y: 21.9 },
+
+  { n: 34, x: 19.5, y: 28.4 },
+  { n: 27, x: 29.1, y: 28.4 },
+
+  { n: 76, x: 74.4, y: 28.4 },
+  { n: 78, x: 82.2, y: 28.4 },
+  { n: 77, x: 74.4, y: 31.5 },
+  { n: 79, x: 82.2, y: 31.5 },
+
+  { n: 14, x: 47.5, y: 31.5 },
+  { n: 75, x: 55.6, y: 31.5 },
+
+  { n: 12, x: 47.5, y: 37.8 },
+  { n: 73, x: 55.6, y: 37.8 },
+  { n: 74, x: 63.4, y: 37.8 },
+
+  { n: 80, x: 76.6, y: 39.8 },
+  { n: 81, x: 84.4, y: 39.8 },
+
+  { n: 11, x: 47.5, y: 43.2 },
+  { n: 71, x: 55.6, y: 43.2 },
+  { n: 72, x: 63.4, y: 43.2 },
+  { n: 82, x: 84.4, y: 43.0 },
+
+  { n: 16, x: 37.6, y: 45.8 },
+  { n: 10, x: 47.5, y: 49.0 },
+  { n: 69, x: 55.6, y: 49.0 },
+  { n: 70, x: 63.4, y: 49.0 },
+  { n: 15, x: 37.6, y: 50.8 },
+
+  { n: 9, x: 47.5, y: 54.7 },
+  { n: 67, x: 55.6, y: 54.7 },
+  { n: 68, x: 63.4, y: 54.7 },
+
+  { n: 8, x: 47.5, y: 60.4 },
+  { n: 51, x: 56.0, y: 61.5 },
+  { n: 52, x: 63.7, y: 61.5 },
+
+  { n: 53, x: 79.2, y: 64.1 },
+  { n: 7, x: 38.7, y: 65.6 },
+  { n: 54, x: 79.2, y: 68.8 },
+  { n: 6, x: 38.7, y: 70.8 },
+
+  { n: 5, x: 47.5, y: 74.5 },
+  { n: 63, x: 60.1, y: 74.5 },
+  { n: 64, x: 70.7, y: 74.5 },
+  { n: 55, x: 81.8, y: 74.5 },
+
+  { n: 4, x: 47.5, y: 80.2 },
+  { n: 62, x: 60.1, y: 80.2 },
+  { n: 65, x: 70.7, y: 80.2 },
+  { n: 56, x: 81.8, y: 80.2 },
+
+  { n: 3, x: 47.5, y: 85.4 },
+  { n: 61, x: 60.4, y: 86.5 },
+  { n: 66, x: 70.7, y: 85.4 },
+  { n: 57, x: 81.8, y: 85.4 },
+
+  { n: 2, x: 47.5, y: 91.1 },
+  { n: 60, x: 64.8, y: 92.2, shape: "circle", w: 6, h: 4.2 },
+  { n: 58, x: 81.8, y: 91.4 },
+
+  { n: 1, x: 47.5, y: 96.6 },
+  { n: 59, x: 81.8, y: 96.6 },
 ];
 
 type TableState = { occupied: boolean; name?: string; since?: number };
 type StateMap = Record<number, TableState>;
 
-const STORAGE_KEY = "santo-antonio-tables-v2";
+const STORAGE_KEY = "santo-antonio-tables-v3";
+const DEFAULT_W = 7;
+const DEFAULT_H = 5;
 
 function loadState(): StateMap {
   if (typeof window === "undefined") return {};
@@ -166,7 +181,7 @@ function Index() {
               Santo Antônio
             </h1>
             <p className="text-[10px] md:text-xs opacity-80 tracking-[0.2em] uppercase mt-0.5">
-              Plano de Chão · Gestão de Mesas
+              Gestão de Mesas
             </p>
           </div>
           <div className="flex gap-2 text-xs">
@@ -180,23 +195,26 @@ function Index() {
       <main className="mx-auto max-w-5xl px-3 md:px-6 py-6">
         <div className="mb-4 flex items-center justify-center gap-4 text-xs text-muted-foreground">
           <LegendDot className="bg-card border border-border" /> Livre
-          <LegendDot className="bg-primary" /> Ocupada
+          <LegendDot className="bg-destructive" /> Ocupada
         </div>
 
         <div
           className="relative mx-auto rounded-lg overflow-hidden shadow-lg border border-border bg-card"
-          style={{ aspectRatio: "884 / 1148", maxWidth: "780px" }}
+          style={{ aspectRatio: "1357 / 1920", maxWidth: "780px" }}
         >
           <img
             src={floorPlan}
-            alt="Plano de chão Santo Antônio"
-            className="absolute inset-0 w-full h-full object-cover select-none pointer-events-none"
+            alt="Plano do restaurante Santo Antônio"
+            className="absolute inset-0 w-full h-full object-contain select-none pointer-events-none"
             draggable={false}
           />
           <div className="absolute inset-0">
             {TABLES.map((t) => {
               const st = state[t.n];
               const occ = !!st?.occupied;
+              const w = t.w ?? DEFAULT_W;
+              const h = t.h ?? DEFAULT_H;
+              const isCircle = t.shape === "circle";
               return (
                 <button
                   key={t.n}
@@ -206,16 +224,18 @@ function Index() {
                       ? `Mesa ${t.n} — ${st?.name ?? "Ocupada"} (toque para liberar)`
                       : `Mesa ${t.n} — Livre`
                   }
-                  className={`absolute -translate-x-1/2 -translate-y-1/2 rounded-full font-serif text-[10px] md:text-xs flex items-center justify-center transition-all hover:scale-125 hover:z-10 shadow-sm ${
+                  className={`absolute -translate-x-1/2 -translate-y-1/2 font-serif text-[10px] md:text-xs font-semibold flex items-center justify-center transition-all hover:scale-110 hover:z-10 ${
+                    isCircle ? "rounded-full" : "rounded-sm"
+                  } ${
                     occ
-                      ? "bg-primary text-primary-foreground ring-2 ring-primary/40 animate-[pulse_2s_ease-in-out_infinite]"
-                      : "bg-card text-foreground border border-primary/40 hover:border-primary"
+                      ? "bg-destructive text-destructive-foreground border-2 border-destructive shadow-md"
+                      : "bg-transparent text-primary border-2 border-primary/60 hover:bg-primary/10"
                   }`}
                   style={{
                     left: `${t.x}%`,
                     top: `${t.y}%`,
-                    width: "28px",
-                    height: "28px",
+                    width: `${w}%`,
+                    height: `${h}%`,
                   }}
                 >
                   {t.n}
@@ -226,10 +246,9 @@ function Index() {
         </div>
 
         <p className="mt-4 text-center text-xs text-muted-foreground">
-          Toque numa mesa livre para ocupar · numa ocupada para liberar
+          Toque numa mesa livre para ocupar · numa ocupada (vermelha) para liberar
         </p>
 
-        {/* Lista de mesas ocupadas */}
         {stats.ocupadas > 0 && (
           <section className="mt-8">
             <h2 className="font-serif text-xl mb-3 text-foreground">
@@ -244,7 +263,7 @@ function Index() {
                     className="flex items-center justify-between gap-2 bg-card border border-border rounded-md px-3 py-2"
                   >
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className="font-serif text-lg text-primary">
+                      <span className="font-serif text-lg text-destructive">
                         {t.n}
                       </span>
                       <span className="text-xs text-muted-foreground truncate">
@@ -323,5 +342,5 @@ function Stat({
 }
 
 function LegendDot({ className }: { className: string }) {
-  return <span className={`inline-block h-3 w-3 rounded-full ${className}`} />;
+  return <span className={`inline-block h-3 w-3 rounded-sm ${className}`} />;
 }
