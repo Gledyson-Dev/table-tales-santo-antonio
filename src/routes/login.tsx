@@ -9,10 +9,14 @@ export const Route = createFileRoute("/login")({
   component: LoginPage,
 });
 
+const ADMIN_USER = "admin";
+const ADMIN_PASS = "admin";
+const ADMIN_EMAIL = "admin@santoantonio.local";
+const ADMIN_REAL_PASS = "admin123";
+
 function LoginPage() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"login" | "signup">("login");
-  const [email, setEmail] = useState("");
+  const [user, setUser] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -28,20 +32,17 @@ function LoginPage() {
     setError(null);
     setLoading(true);
     try {
-      if (mode === "login") {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { emailRedirectTo: window.location.origin + "/admin" },
-        });
-        if (error) throw error;
+      if (user.trim().toLowerCase() !== ADMIN_USER || password !== ADMIN_PASS) {
+        throw new Error("Usuário ou senha incorretos");
       }
+      const { error } = await supabase.auth.signInWithPassword({
+        email: ADMIN_EMAIL,
+        password: ADMIN_REAL_PASS,
+      });
+      if (error) throw error;
       navigate({ to: "/admin" });
     } catch (err: any) {
-      setError(err.message ?? "Erro");
+      setError(err.message ?? "Erro ao entrar");
     } finally {
       setLoading(false);
     }
@@ -59,26 +60,23 @@ function LoginPage() {
         </p>
         <form onSubmit={submit} className="space-y-3">
           <div>
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" required value={email}
-              onChange={(e) => setEmail(e.target.value)} />
+            <Label htmlFor="user">Usuário</Label>
+            <Input id="user" required value={user} autoFocus
+              onChange={(e) => setUser(e.target.value)} placeholder="admin" />
           </div>
           <div>
             <Label htmlFor="password">Senha</Label>
-            <Input id="password" type="password" required minLength={6} value={password}
-              onChange={(e) => setPassword(e.target.value)} />
+            <Input id="password" type="password" required value={password}
+              onChange={(e) => setPassword(e.target.value)} placeholder="admin" />
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "..." : mode === "login" ? "Entrar" : "Criar conta"}
+            {loading ? "..." : "Entrar"}
           </Button>
         </form>
-        <button
-          onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(null); }}
-          className="mt-4 text-xs text-muted-foreground hover:text-foreground w-full text-center"
-        >
-          {mode === "login" ? "Não tem conta? Criar uma" : "Já tem conta? Entrar"}
-        </button>
+        <p className="mt-4 text-[10px] text-center text-muted-foreground">
+          Somente administradores podem alterar o layout.
+        </p>
       </div>
     </div>
   );
