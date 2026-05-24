@@ -1,173 +1,88 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import floorPlan from "@/assets/floor-plan.png";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { supabase } from "@/integrations/supabase/client";
+import { fetchTables, fetchLabels, type TableRow, type TextLabel } from "@/lib/floor-data";
+import { Settings } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   component: Index,
 });
 
-type Shape = "square" | "circle";
-type Table = { n: number; x: number; y: number; w?: number; h?: number; shape?: Shape };
-
-// Posições em % sobre a imagem do plano (1357x1920)
-const TABLES: Table[] = [
-  { n: 30, x: 19.5, y: 4.2, shape: "circle", w: 6, h: 4.2 },
-  { n: 40, x: 31.7, y: 4.7, w: 6, h: 4.2 },
-  { n: 20, x: 45.3, y: 4.2, shape: "circle", w: 6, h: 4.2 },
-
-  { n: 31, x: 19.5, y: 10.7 },
-  { n: 29, x: 32.8, y: 10.7 },
-  { n: 24, x: 40.2, y: 10.7 },
-  { n: 21, x: 47.2, y: 10.7 },
-
-  { n: 32, x: 19.5, y: 16.1 },
-  { n: 28, x: 32.8, y: 16.1 },
-  { n: 25, x: 40.2, y: 16.1 },
-  { n: 23, x: 47.2, y: 16.1 },
-
-  { n: 33, x: 19.5, y: 21.9 },
-  { n: 46, x: 32.8, y: 21.9 },
-  { n: 36, x: 39.8, y: 21.9 },
-  { n: 26, x: 46.8, y: 21.9 },
-
-  { n: 34, x: 19.5, y: 28.4 },
-  { n: 27, x: 29.1, y: 28.4 },
-
-  { n: 76, x: 74.4, y: 28.4 },
-  { n: 78, x: 82.2, y: 28.4 },
-  { n: 77, x: 74.4, y: 31.5 },
-  { n: 79, x: 82.2, y: 31.5 },
-
-  { n: 14, x: 47.5, y: 31.5 },
-  { n: 75, x: 55.6, y: 31.5 },
-
-  { n: 12, x: 47.5, y: 37.8 },
-  { n: 73, x: 55.6, y: 37.8 },
-  { n: 74, x: 63.4, y: 37.8 },
-
-  { n: 80, x: 76.6, y: 39.8 },
-  { n: 81, x: 84.4, y: 39.8 },
-
-  { n: 11, x: 47.5, y: 43.2 },
-  { n: 71, x: 55.6, y: 43.2 },
-  { n: 72, x: 63.4, y: 43.2 },
-  { n: 82, x: 84.4, y: 43.0 },
-
-  { n: 16, x: 37.6, y: 45.8 },
-  { n: 10, x: 47.5, y: 49.0 },
-  { n: 69, x: 55.6, y: 49.0 },
-  { n: 70, x: 63.4, y: 49.0 },
-  { n: 15, x: 37.6, y: 50.8 },
-
-  { n: 9, x: 47.5, y: 54.7 },
-  { n: 67, x: 55.6, y: 54.7 },
-  { n: 68, x: 63.4, y: 54.7 },
-
-  { n: 8, x: 47.5, y: 60.4 },
-  { n: 51, x: 56.0, y: 61.5 },
-  { n: 52, x: 63.7, y: 61.5 },
-
-  { n: 53, x: 79.2, y: 64.1 },
-  { n: 7, x: 38.7, y: 65.6 },
-  { n: 54, x: 79.2, y: 68.8 },
-  { n: 6, x: 38.7, y: 70.8 },
-
-  { n: 5, x: 47.5, y: 74.5 },
-  { n: 63, x: 60.1, y: 74.5 },
-  { n: 64, x: 70.7, y: 74.5 },
-  { n: 55, x: 81.8, y: 74.5 },
-
-  { n: 4, x: 47.5, y: 80.2 },
-  { n: 62, x: 60.1, y: 80.2 },
-  { n: 65, x: 70.7, y: 80.2 },
-  { n: 56, x: 81.8, y: 80.2 },
-
-  { n: 3, x: 47.5, y: 85.4 },
-  { n: 61, x: 60.4, y: 86.5 },
-  { n: 66, x: 70.7, y: 85.4 },
-  { n: 57, x: 81.8, y: 85.4 },
-
-  { n: 2, x: 47.5, y: 91.1 },
-  { n: 60, x: 64.8, y: 92.2, shape: "circle", w: 6, h: 4.2 },
-  { n: 58, x: 81.8, y: 91.4 },
-
-  { n: 1, x: 47.5, y: 96.6 },
-  { n: 59, x: 81.8, y: 96.6 },
-];
-
-type TableState = { occupied: boolean; name?: string; since?: number };
-type StateMap = Record<number, TableState>;
-
-const STORAGE_KEY = "santo-antonio-tables-v3";
-const DEFAULT_W = 7;
-const DEFAULT_H = 5;
-
-function loadState(): StateMap {
-  if (typeof window === "undefined") return {};
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : {};
-  } catch {
-    return {};
-  }
-}
-
 function Index() {
-  const [state, setState] = useState<StateMap>({});
-  const [editing, setEditing] = useState<number | null>(null);
+  const [tables, setTables] = useState<TableRow[]>([]);
+  const [labels, setLabels] = useState<TextLabel[]>([]);
+  const [authed, setAuthed] = useState(false);
+  const [editing, setEditing] = useState<TableRow | null>(null);
   const [nameInput, setNameInput] = useState("");
+  const [seatFilter, setSeatFilter] = useState<"all" | number>("all");
 
   useEffect(() => {
-    setState(loadState());
+    fetchTables().then(setTables).catch(console.error);
+    fetchLabels().then(setLabels).catch(console.error);
+
+    supabase.auth.getSession().then(({ data }) => setAuthed(!!data.session));
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setAuthed(!!s));
+
+    const ch = supabase
+      .channel("floor")
+      .on("postgres_changes", { event: "*", schema: "public", table: "tables" },
+        () => fetchTables().then(setTables))
+      .on("postgres_changes", { event: "*", schema: "public", table: "text_labels" },
+        () => fetchLabels().then(setLabels))
+      .subscribe();
+
+    return () => { sub.subscription.unsubscribe(); supabase.removeChannel(ch); };
   }, []);
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  const seatGroups = useMemo(() => {
+    const map = new Map<number, { total: number; livres: number }>();
+    for (const t of tables) {
+      const g = map.get(t.seats) ?? { total: 0, livres: 0 };
+      g.total++;
+      if (!t.occupied) g.livres++;
+      map.set(t.seats, g);
     }
-  }, [state]);
+    return [...map.entries()].sort((a, b) => a[0] - b[0]);
+  }, [tables]);
 
   const stats = useMemo(() => {
-    const ocupadas = TABLES.filter((t) => state[t.n]?.occupied).length;
-    return {
-      total: TABLES.length,
-      ocupadas,
-      livres: TABLES.length - ocupadas,
-    };
-  }, [state]);
+    const ocupadas = tables.filter((t) => t.occupied).length;
+    return { total: tables.length, ocupadas, livres: tables.length - ocupadas };
+  }, [tables]);
 
-  function handleClick(n: number) {
-    const cur = state[n];
-    if (cur?.occupied) {
-      const next = { ...state };
-      delete next[n];
-      setState(next);
+  const visibleTables = seatFilter === "all"
+    ? tables
+    : tables.filter((t) => t.seats === seatFilter);
+
+  async function handleClick(t: TableRow) {
+    if (!authed) {
+      alert("Faça login para alterar o status das mesas.");
+      return;
+    }
+    if (t.occupied) {
+      await supabase.from("tables").update({
+        occupied: false, occupied_name: null, occupied_since: null,
+      }).eq("id", t.id);
     } else {
-      setEditing(n);
+      setEditing(t);
       setNameInput("");
     }
   }
 
-  function confirmOccupy() {
-    if (editing == null) return;
-    setState((s) => ({
-      ...s,
-      [editing]: {
-        occupied: true,
-        name: nameInput.trim() || undefined,
-        since: Date.now(),
-      },
-    }));
+  async function confirmOccupy() {
+    if (!editing) return;
+    await supabase.from("tables").update({
+      occupied: true,
+      occupied_name: nameInput.trim() || null,
+      occupied_since: new Date().toISOString(),
+    }).eq("id", editing.id);
     setEditing(null);
     setNameInput("");
   }
@@ -177,138 +92,112 @@ function Index() {
       <header className="bg-primary text-primary-foreground sticky top-0 z-20 shadow">
         <div className="mx-auto max-w-6xl px-4 py-4 flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="font-serif text-2xl md:text-3xl leading-tight">
-              Santo Antônio
-            </h1>
+            <h1 className="font-serif text-2xl md:text-3xl leading-tight">Santo Antônio</h1>
             <p className="text-[10px] md:text-xs opacity-80 tracking-[0.2em] uppercase mt-0.5">
               Gestão de Mesas
             </p>
           </div>
-          <div className="flex gap-2 text-xs">
+          <div className="flex items-center gap-2 text-xs">
             <Stat label="Total" value={stats.total} />
             <Stat label="Livres" value={stats.livres} tone="success" />
             <Stat label="Ocup." value={stats.ocupadas} tone="destructive" />
+            {authed ? (
+              <Link to="/admin" className="ml-2 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md bg-primary-foreground/10 hover:bg-primary-foreground/20">
+                <Settings className="h-3 w-3" /> Admin
+              </Link>
+            ) : (
+              <Link to="/login" className="ml-2 px-2.5 py-1.5 rounded-md bg-primary-foreground/10 hover:bg-primary-foreground/20">
+                Entrar
+              </Link>
+            )}
           </div>
         </div>
       </header>
 
       <main className="mx-auto max-w-5xl px-3 md:px-6 py-6">
-        <div className="mb-4 flex items-center justify-center gap-4 text-xs text-muted-foreground">
-          <LegendDot className="bg-card border border-border" /> Livre
-          <LegendDot className="bg-destructive" /> Ocupada
-        </div>
+        <Tabs value={String(seatFilter)} onValueChange={(v) =>
+          setSeatFilter(v === "all" ? "all" : Number(v))
+        }>
+          <TabsList className="flex flex-wrap h-auto">
+            <TabsTrigger value="all">Todas ({tables.length})</TabsTrigger>
+            {seatGroups.map(([seats, g]) => (
+              <TabsTrigger key={seats} value={String(seats)}>
+                {seats} lug. ({g.livres}/{g.total})
+              </TabsTrigger>
+            ))}
+          </TabsList>
 
-        <div
-          className="relative mx-auto rounded-lg overflow-hidden shadow-lg border border-border bg-card"
-          style={{ aspectRatio: "1357 / 1920", maxWidth: "780px" }}
-        >
-          <img
-            src={floorPlan}
-            alt="Plano do restaurante Santo Antônio"
-            className="absolute inset-0 w-full h-full object-contain select-none pointer-events-none"
-            draggable={false}
-          />
-          <div className="absolute inset-0">
-            {TABLES.map((t) => {
-              const st = state[t.n];
-              const occ = !!st?.occupied;
-              const w = t.w ?? DEFAULT_W;
-              const h = t.h ?? DEFAULT_H;
-              const isCircle = t.shape === "circle";
-              return (
-                <button
-                  key={t.n}
-                  onClick={() => handleClick(t.n)}
-                  title={
-                    occ
-                      ? `Mesa ${t.n} — ${st?.name ?? "Ocupada"} (toque para liberar)`
-                      : `Mesa ${t.n} — Livre`
-                  }
-                  className={`absolute -translate-x-1/2 -translate-y-1/2 font-serif text-[10px] md:text-xs font-semibold flex items-center justify-center transition-all hover:scale-110 hover:z-10 ${
-                    isCircle ? "rounded-full" : "rounded-sm"
-                  } ${
-                    occ
-                      ? "bg-destructive text-destructive-foreground border-2 border-destructive shadow-md"
-                      : "bg-transparent text-primary border-2 border-primary/60 hover:bg-primary/10"
-                  }`}
-                  style={{
-                    left: `${t.x}%`,
-                    top: `${t.y}%`,
-                    width: `${w}%`,
-                    height: `${h}%`,
-                  }}
+          <TabsContent value={String(seatFilter)} className="mt-4">
+            <div className="mb-4 flex items-center justify-center gap-4 text-xs text-muted-foreground">
+              <LegendDot className="bg-card border border-border" /> Livre
+              <LegendDot className="bg-destructive" /> Ocupada
+            </div>
+
+            <div
+              className="relative mx-auto rounded-lg overflow-hidden border border-border bg-card"
+              style={{ aspectRatio: "1357 / 1920", maxWidth: "780px" }}
+            >
+              {labels.map((l) => (
+                <div
+                  key={l.id}
+                  className="absolute -translate-x-1/2 -translate-y-1/2 font-serif font-semibold text-muted-foreground pointer-events-none whitespace-nowrap"
+                  style={{ left: `${l.x}%`, top: `${l.y}%`, fontSize: `${l.font_size}px` }}
                 >
-                  {t.n}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+                  {l.text}
+                </div>
+              ))}
+              {visibleTables.map((t) => (
+                <TableMarker key={t.id} t={t} onClick={() => handleClick(t)} dim={seatFilter !== "all"} />
+              ))}
+              {seatFilter !== "all" && tables.filter((t) => t.seats !== seatFilter).map((t) => (
+                <TableMarker key={t.id + "-faded"} t={t} onClick={() => handleClick(t)} faded />
+              ))}
+            </div>
 
-        <p className="mt-4 text-center text-xs text-muted-foreground">
-          Toque numa mesa livre para ocupar · numa ocupada (vermelha) para liberar
-        </p>
+            <p className="mt-4 text-center text-xs text-muted-foreground">
+              {authed ? "Toque numa mesa para ocupar/liberar" : "Entre para gerenciar as mesas"}
+            </p>
+          </TabsContent>
+        </Tabs>
 
         {stats.ocupadas > 0 && (
           <section className="mt-8">
-            <h2 className="font-serif text-xl mb-3 text-foreground">
-              Mesas ocupadas
-            </h2>
+            <h2 className="font-serif text-xl mb-3">Mesas ocupadas</h2>
             <ul className="grid grid-cols-2 md:grid-cols-3 gap-2">
-              {TABLES.filter((t) => state[t.n]?.occupied).map((t) => {
-                const st = state[t.n]!;
-                return (
-                  <li
-                    key={t.n}
-                    className="flex items-center justify-between gap-2 bg-card border border-border rounded-md px-3 py-2"
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="font-serif text-lg text-destructive">
-                        {t.n}
-                      </span>
-                      <span className="text-xs text-muted-foreground truncate">
-                        {st.name ?? "—"}
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => handleClick(t.n)}
-                      className="text-[10px] uppercase tracking-wider text-primary hover:underline"
-                    >
-                      Liberar
-                    </button>
-                  </li>
-                );
-              })}
+              {tables.filter((t) => t.occupied).map((t) => (
+                <li key={t.id} className="flex items-center justify-between gap-2 bg-card border border-border rounded-md px-3 py-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="font-serif text-lg text-destructive">{t.number}</span>
+                    <span className="text-xs text-muted-foreground truncate">
+                      {t.occupied_name ?? "—"} · {t.seats} lug.
+                    </span>
+                  </div>
+                  <button onClick={() => handleClick(t)} className="text-[10px] uppercase tracking-wider text-primary hover:underline">
+                    Liberar
+                  </button>
+                </li>
+              ))}
             </ul>
           </section>
         )}
       </main>
 
-      <Dialog
-        open={editing != null}
-        onOpenChange={(o) => !o && setEditing(null)}
-      >
+      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="font-serif text-2xl">
-              Ocupar mesa {editing}
+              Ocupar mesa {editing?.number} ({editing?.seats} lugares)
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-2">
             <Label htmlFor="name">Nome do cliente (opcional)</Label>
-            <Input
-              id="name"
-              value={nameInput}
+            <Input id="name" value={nameInput} autoFocus
               onChange={(e) => setNameInput(e.target.value)}
               placeholder="Ex: Família Silva"
-              autoFocus
-              onKeyDown={(e) => e.key === "Enter" && confirmOccupy()}
-            />
+              onKeyDown={(e) => e.key === "Enter" && confirmOccupy()} />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditing(null)}>
-              Cancelar
-            </Button>
+            <Button variant="outline" onClick={() => setEditing(null)}>Cancelar</Button>
             <Button onClick={confirmOccupy}>Confirmar</Button>
           </DialogFooter>
         </DialogContent>
@@ -317,21 +206,31 @@ function Index() {
   );
 }
 
-function Stat({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: number;
-  tone?: "success" | "destructive";
+function TableMarker({ t, onClick, faded, dim }: {
+  t: TableRow; onClick: () => void; faded?: boolean; dim?: boolean;
 }) {
-  const dot =
-    tone === "success"
-      ? "bg-success"
-      : tone === "destructive"
-        ? "bg-destructive"
-        : "bg-primary-foreground/50";
+  const isCircle = t.shape === "circle";
+  return (
+    <button
+      onClick={onClick}
+      title={`Mesa ${t.number} · ${t.seats} lugares${t.occupied ? ` · ${t.occupied_name ?? "Ocupada"}` : ""}`}
+      className={`absolute -translate-x-1/2 -translate-y-1/2 font-serif text-[10px] md:text-xs font-semibold flex flex-col items-center justify-center leading-none transition-all hover:scale-110 hover:z-10 ${
+        isCircle ? "rounded-full" : "rounded-sm"
+      } ${
+        t.occupied
+          ? "bg-destructive text-destructive-foreground border-2 border-destructive"
+          : "bg-card text-primary border-2 border-primary/60 hover:bg-primary/10"
+      } ${faded ? "opacity-25" : dim ? "" : ""}`}
+      style={{ left: `${t.x}%`, top: `${t.y}%`, width: `${t.w}%`, height: `${t.h}%` }}
+    >
+      <span>{t.number}</span>
+      <span className="text-[8px] opacity-70">{t.seats}p</span>
+    </button>
+  );
+}
+
+function Stat({ label, value, tone }: { label: string; value: number; tone?: "success" | "destructive" }) {
+  const dot = tone === "success" ? "bg-success" : tone === "destructive" ? "bg-destructive" : "bg-primary-foreground/50";
   return (
     <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-primary-foreground/10">
       <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />
