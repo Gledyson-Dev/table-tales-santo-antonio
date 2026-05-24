@@ -232,7 +232,7 @@ function TableMarker({ t, onClick, faded, dim }: {
 function Stat({ label, value, tone }: { label: string; value: number; tone?: "success" | "destructive" }) {
   const dot = tone === "success" ? "bg-success" : tone === "destructive" ? "bg-destructive" : "bg-primary-foreground/50";
   return (
-    <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-primary-foreground/10">
+    <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-primary-foreground/10 text-left">
       <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />
       <span className="uppercase tracking-wider opacity-80">{label}</span>
       <span className="font-serif text-base leading-none">{value}</span>
