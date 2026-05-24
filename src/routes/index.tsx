@@ -227,7 +227,7 @@ function TableMarker({ t, onClick, faded, dim }: {
       style={{ left: `${t.x}%`, top: `${t.y}%`, width: `${t.w}%`, height: `${t.h}%` }}
     >
       <span>{t.number}</span>
-      <span className="text-[8px] opacity-70">{t.seats}p</span>
+      <span className="text-[9px] md:text-[11px] opacity-70">{t.seats}p</span>
     </button>
   );
 }
