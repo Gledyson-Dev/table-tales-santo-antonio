@@ -137,8 +137,8 @@ function Index() {
             </div>
 
             <div
-              className="relative mx-auto rounded-lg overflow-hidden border border-border bg-card w-full md:max-w-[780px]"
-              style={{ aspectRatio: "1357 / 1920" }}
+              className="relative mx-auto rounded-lg overflow-hidden border border-border bg-card"
+              style={{ aspectRatio: "1357 / 1920", maxWidth: "780px" }}
             >
               {labels.map((l) => (
                 <div
@@ -217,14 +217,14 @@ function TableMarker({ t, onClick, faded, dim }: {
     <button
       onClick={onClick}
       title={`Mesa ${t.number} · ${t.seats} lugares${t.occupied ? ` · ${t.occupied_name ?? "Ocupada"}` : ""}`}
-      className={`absolute -translate-x-1/2 -translate-y-1/2 font-serif text-xs md:text-sm font-semibold flex flex-col items-center justify-center leading-none transition-all hover:scale-110 hover:z-10 ${
+      className={`absolute -translate-x-1/2 -translate-y-1/2 font-serif text-[10px] md:text-xs font-semibold flex flex-col items-center justify-center leading-none transition-all hover:scale-110 hover:z-10 ${
         isCircle ? "rounded-full" : "rounded-sm"
       } ${
         t.occupied
           ? "bg-destructive text-destructive-foreground border-2 border-destructive"
           : "bg-card text-primary border-2 border-primary/60 hover:bg-primary/10"
       } ${faded ? "opacity-25" : dim ? "" : ""}`}
-      style={{ left: `${t.x}%`, top: `${t.y}%`, width: `${t.w}%`, height: `${t.h}%`, minWidth: "36px", minHeight: "36px" }}
+      style={{ left: `${t.x}%`, top: `${t.y}%`, width: `${t.w}%`, height: `${t.h}%` }}
     >
       <span>{t.number}</span>
       <span className="text-[8px] opacity-70">{t.seats}p</span>
