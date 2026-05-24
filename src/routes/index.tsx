@@ -224,7 +224,7 @@ function TableMarker({ t, onClick, faded, dim }: {
           ? "bg-destructive text-destructive-foreground border-2 border-destructive"
           : "bg-card text-primary border-2 border-primary/60 hover:bg-primary/10"
       } ${faded ? "opacity-25" : dim ? "" : ""}`}
-      style={{ left: `${t.x}%`, top: `${t.y}%`, width: `${t.w}%`, height: `${t.h}%` }}
+      style={{ left: `${t.x}%`, top: `${t.y}%`, width: `${t.w}%`, height: `${t.h}%`, minWidth: "36px", minHeight: "36px" }}
     >
       <span>{t.number}</span>
       <span className="text-[8px] opacity-70">{t.seats}p</span>
