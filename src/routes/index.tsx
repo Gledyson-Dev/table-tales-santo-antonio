@@ -217,7 +217,7 @@ function TableMarker({ t, onClick, faded, dim }: {
     <button
       onClick={onClick}
       title={`Mesa ${t.number} · ${t.seats} lugares${t.occupied ? ` · ${t.occupied_name ?? "Ocupada"}` : ""}`}
-      className={`absolute -translate-x-1/2 -translate-y-1/2 font-serif text-xs md:text-sm font-semibold flex flex-col items-center justify-center leading-none transition-all hover:scale-110 hover:z-10 min-w-[28px] min-h-[28px] md:min-w-[36px] md:min-h-[36px] ${
+      className={`absolute -translate-x-1/2 -translate-y-1/2 font-serif text-[10px] md:text-xs font-semibold flex flex-col items-center justify-center leading-none transition-all hover:scale-110 hover:z-10 ${
         isCircle ? "rounded-full" : "rounded-sm"
       } ${
         t.occupied
@@ -227,7 +227,7 @@ function TableMarker({ t, onClick, faded, dim }: {
       style={{ left: `${t.x}%`, top: `${t.y}%`, width: `${t.w}%`, height: `${t.h}%` }}
     >
       <span>{t.number}</span>
-      <span className="text-[9px] md:text-[11px] opacity-70">{t.seats}p</span>
+      <span className="text-[8px] opacity-70">{t.seats}p</span>
     </button>
   );
 }
