@@ -90,29 +90,32 @@ function Index() {
   return (
     <div className="min-h-screen bg-background">
       <header className="bg-primary text-primary-foreground sticky top-0 z-20 shadow">
-        <div className="mx-auto max-w-6xl px-4 py-4 flex items-center justify-between gap-4 flex-wrap">
-          <div>
-            <h1 className="font-serif text-2xl md:text-3xl leading-tight">Santo Antônio</h1>
-            <p className="text-[10px] md:text-xs opacity-80 tracking-[0.2em] uppercase mt-0.5">
-              Gestão de Mesas
-            </p>
-          </div>
-          <div className="flex items-center gap-2 text-xs">
-            <Stat label="Total" value={stats.total} />
-            <Stat label="Livres" value={stats.livres} tone="success" />
-            <Stat label="Ocup." value={stats.ocupadas} tone="destructive" />
+        <div className="mx-auto max-w-6xl px-3 md:px-4 py-3 md:py-4 space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <h1 className="font-serif text-xl md:text-3xl leading-tight truncate">Santo Antônio</h1>
+              <p className="text-[9px] md:text-xs opacity-80 tracking-[0.2em] uppercase mt-0.5">
+                Gestão de Mesas
+              </p>
+            </div>
             {authed ? (
-              <Link to="/admin" className="ml-2 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md bg-primary-foreground/10 hover:bg-primary-foreground/20">
+              <Link to="/admin" className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md bg-primary-foreground/10 hover:bg-primary-foreground/20 text-xs">
                 <Settings className="h-3 w-3" /> Admin
               </Link>
             ) : (
-              <Link to="/login" className="ml-2 px-2.5 py-1.5 rounded-md bg-primary-foreground/10 hover:bg-primary-foreground/20">
+              <Link to="/login" className="shrink-0 px-2.5 py-1.5 rounded-md bg-primary-foreground/10 hover:bg-primary-foreground/20 text-xs">
                 Entrar
               </Link>
             )}
           </div>
+          <div className="grid grid-cols-3 gap-1.5 text-xs">
+            <Stat label="Total" value={stats.total} />
+            <Stat label="Livres" value={stats.livres} tone="success" />
+            <Stat label="Ocup." value={stats.ocupadas} tone="destructive" />
+          </div>
         </div>
       </header>
+
 
       <main className="mx-auto max-w-5xl px-3 md:px-6 py-6">
         <Tabs value={String(seatFilter)} onValueChange={(v) =>
