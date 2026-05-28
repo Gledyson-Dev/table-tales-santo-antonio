@@ -18,6 +18,7 @@ export const Route = createFileRoute("/")({
 function Index() {
   const [tables, setTables] = useState<TableRow[]>([]);
   const [labels, setLabels] = useState<TextLabel[]>([]);
+  const [bgUrl, setBgUrl] = useState<string | null>(null);
   const [authed, setAuthed] = useState(false);
   const [editing, setEditing] = useState<TableRow | null>(null);
   const [nameInput, setNameInput] = useState("");
@@ -26,6 +27,7 @@ function Index() {
   useEffect(() => {
     fetchTables().then(setTables).catch(console.error);
     fetchLabels().then(setLabels).catch(console.error);
+    fetchSettings().then((s) => setBgUrl(s.bg_image_url)).catch(console.error);
 
     supabase.auth.getSession().then(({ data }) => setAuthed(!!data.session));
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setAuthed(!!s));
@@ -36,6 +38,8 @@ function Index() {
         () => fetchTables().then(setTables))
       .on("postgres_changes", { event: "*", schema: "public", table: "text_labels" },
         () => fetchLabels().then(setLabels))
+      .on("postgres_changes", { event: "*", schema: "public", table: "settings" },
+        () => fetchSettings().then((s) => setBgUrl(s.bg_image_url)))
       .subscribe();
 
     return () => { sub.subscription.unsubscribe(); supabase.removeChannel(ch); };
