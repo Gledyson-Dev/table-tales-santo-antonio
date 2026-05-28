@@ -137,8 +137,12 @@ function Index() {
             </div>
 
             <div
-              className="relative mx-auto rounded-lg overflow-hidden border border-border bg-card"
-              style={{ aspectRatio: "1357 / 1920", maxWidth: "780px" }}
+              className="relative mx-auto rounded-lg overflow-hidden border border-border bg-card bg-center bg-no-repeat bg-contain"
+              style={{
+                aspectRatio: "1357 / 1920",
+                maxWidth: "780px",
+                backgroundImage: bgUrl ? `url(${bgUrl})` : undefined,
+              }}
             >
               {labels.map((l) => (
                 <div
