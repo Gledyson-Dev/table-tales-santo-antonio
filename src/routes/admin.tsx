@@ -41,15 +41,42 @@ function AdminPage() {
     if (!ready) return;
     fetchTables().then(setTables);
     fetchLabels().then(setLabels);
+    fetchSettings().then((s) => setBgUrl(s.bg_image_url));
     const ch = supabase
       .channel("admin-floor")
       .on("postgres_changes", { event: "*", schema: "public", table: "tables" },
         () => fetchTables().then(setTables))
       .on("postgres_changes", { event: "*", schema: "public", table: "text_labels" },
         () => fetchLabels().then(setLabels))
+      .on("postgres_changes", { event: "*", schema: "public", table: "settings" },
+        () => fetchSettings().then((s) => setBgUrl(s.bg_image_url)))
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [ready]);
+
+  async function uploadBg(file: File) {
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop() ?? "png";
+      const path = `bg-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("floor-bg").upload(path, file, { upsert: true });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from("floor-bg").getPublicUrl(path);
+      const url = pub.publicUrl;
+      const { error: dbErr } = await supabase.from("settings").upsert({ id: 1, bg_image_url: url, updated_at: new Date().toISOString() });
+      if (dbErr) throw dbErr;
+      setBgUrl(url);
+    } catch (e: any) {
+      alert("Erro ao enviar imagem: " + (e.message ?? e));
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function removeBg() {
+    await supabase.from("settings").upsert({ id: 1, bg_image_url: null, updated_at: new Date().toISOString() });
+    setBgUrl(null);
+  }
 
   const selT = tables.find((t) => t.id === selectedTable);
   const selL = labels.find((l) => l.id === selectedLabel);
