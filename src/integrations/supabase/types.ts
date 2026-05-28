@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      settings: {
+        Row: {
+          bg_image_url: string | null
+          id: number
+          updated_at: string
+        }
+        Insert: {
+          bg_image_url?: string | null
+          id?: number
+          updated_at?: string
+        }
+        Update: {
+          bg_image_url?: string | null
+          id?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tables: {
         Row: {
           created_at: string
