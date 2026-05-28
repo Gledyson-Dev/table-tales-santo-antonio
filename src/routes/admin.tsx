@@ -1,14 +1,14 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { fetchTables, fetchLabels, type TableRow, type TextLabel } from "@/lib/floor-data";
+import { fetchTables, fetchLabels, fetchSettings, type TableRow, type TextLabel } from "@/lib/floor-data";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, Type, Trash2, LogOut, ArrowLeft, Save } from "lucide-react";
+import { Plus, Type, Trash2, LogOut, ArrowLeft, Save, Image as ImageIcon, X } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
