@@ -37,3 +37,8 @@ export async function fetchLabels(): Promise<TextLabel[]> {
   if (error) throw error;
   return (data ?? []) as TextLabel[];
 }
+
+export async function fetchSettings(): Promise<{ bg_image_url: string | null }> {
+  const { data } = await supabase.from("settings").select("bg_image_url").eq("id", 1).maybeSingle();
+  return { bg_image_url: (data as any)?.bg_image_url ?? null };
+}

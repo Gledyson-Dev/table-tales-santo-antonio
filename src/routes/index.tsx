@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
-import { fetchTables, fetchLabels, type TableRow, type TextLabel } from "@/lib/floor-data";
+import { fetchTables, fetchLabels, fetchSettings, type TableRow, type TextLabel } from "@/lib/floor-data";
 import { Settings } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -18,6 +18,7 @@ export const Route = createFileRoute("/")({
 function Index() {
   const [tables, setTables] = useState<TableRow[]>([]);
   const [labels, setLabels] = useState<TextLabel[]>([]);
+  const [bgUrl, setBgUrl] = useState<string | null>(null);
   const [authed, setAuthed] = useState(false);
   const [editing, setEditing] = useState<TableRow | null>(null);
   const [nameInput, setNameInput] = useState("");
@@ -26,6 +27,7 @@ function Index() {
   useEffect(() => {
     fetchTables().then(setTables).catch(console.error);
     fetchLabels().then(setLabels).catch(console.error);
+    fetchSettings().then((s) => setBgUrl(s.bg_image_url)).catch(console.error);
 
     supabase.auth.getSession().then(({ data }) => setAuthed(!!data.session));
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setAuthed(!!s));
@@ -36,6 +38,8 @@ function Index() {
         () => fetchTables().then(setTables))
       .on("postgres_changes", { event: "*", schema: "public", table: "text_labels" },
         () => fetchLabels().then(setLabels))
+      .on("postgres_changes", { event: "*", schema: "public", table: "settings" },
+        () => fetchSettings().then((s) => setBgUrl(s.bg_image_url)))
       .subscribe();
 
     return () => { sub.subscription.unsubscribe(); supabase.removeChannel(ch); };
@@ -62,10 +66,6 @@ function Index() {
     : tables.filter((t) => t.seats === seatFilter);
 
   async function handleClick(t: TableRow) {
-    if (!authed) {
-      alert("Faça login para alterar o status das mesas.");
-      return;
-    }
     if (t.occupied) {
       await supabase.from("tables").update({
         occupied: false, occupied_name: null, occupied_since: null,
@@ -137,8 +137,12 @@ function Index() {
             </div>
 
             <div
-              className="relative mx-auto rounded-lg overflow-hidden border border-border bg-card"
-              style={{ aspectRatio: "1357 / 1920", maxWidth: "780px" }}
+              className="relative mx-auto rounded-lg overflow-hidden border border-border bg-card bg-center bg-no-repeat bg-contain"
+              style={{
+                aspectRatio: "1357 / 1920",
+                maxWidth: "780px",
+                backgroundImage: bgUrl ? `url(${bgUrl})` : undefined,
+              }}
             >
               {labels.map((l) => (
                 <div
@@ -158,7 +162,7 @@ function Index() {
             </div>
 
             <p className="mt-4 text-center text-xs text-muted-foreground">
-              {authed ? "Toque numa mesa para ocupar/liberar" : "Entre para gerenciar as mesas"}
+              Toque numa mesa para ocupar/liberar
             </p>
           </TabsContent>
         </Tabs>

@@ -1,14 +1,14 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { fetchTables, fetchLabels, type TableRow, type TextLabel } from "@/lib/floor-data";
+import { fetchTables, fetchLabels, fetchSettings, type TableRow, type TextLabel } from "@/lib/floor-data";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, Type, Trash2, LogOut, ArrowLeft, Save } from "lucide-react";
+import { Plus, Type, Trash2, LogOut, ArrowLeft, Save, Image as ImageIcon, X } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
@@ -19,6 +19,8 @@ function AdminPage() {
   const [ready, setReady] = useState(false);
   const [tables, setTables] = useState<TableRow[]>([]);
   const [labels, setLabels] = useState<TextLabel[]>([]);
+  const [bgUrl, setBgUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
   const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
   const [tableDraft, setTableDraft] = useState<Partial<TableRow>>({});
@@ -26,6 +28,7 @@ function AdminPage() {
   const [addLabelOpen, setAddLabelOpen] = useState(false);
   const [newLabelText, setNewLabelText] = useState("");
   const boardRef = useRef<HTMLDivElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -38,15 +41,42 @@ function AdminPage() {
     if (!ready) return;
     fetchTables().then(setTables);
     fetchLabels().then(setLabels);
+    fetchSettings().then((s) => setBgUrl(s.bg_image_url));
     const ch = supabase
       .channel("admin-floor")
       .on("postgres_changes", { event: "*", schema: "public", table: "tables" },
         () => fetchTables().then(setTables))
       .on("postgres_changes", { event: "*", schema: "public", table: "text_labels" },
         () => fetchLabels().then(setLabels))
+      .on("postgres_changes", { event: "*", schema: "public", table: "settings" },
+        () => fetchSettings().then((s) => setBgUrl(s.bg_image_url)))
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [ready]);
+
+  async function uploadBg(file: File) {
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop() ?? "png";
+      const path = `bg-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("floor-bg").upload(path, file, { upsert: true });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from("floor-bg").getPublicUrl(path);
+      const url = pub.publicUrl;
+      const { error: dbErr } = await supabase.from("settings").upsert({ id: 1, bg_image_url: url, updated_at: new Date().toISOString() });
+      if (dbErr) throw dbErr;
+      setBgUrl(url);
+    } catch (e: any) {
+      alert("Erro ao enviar imagem: " + (e.message ?? e));
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function removeBg() {
+    await supabase.from("settings").upsert({ id: 1, bg_image_url: null, updated_at: new Date().toISOString() });
+    setBgUrl(null);
+  }
 
   const selT = tables.find((t) => t.id === selectedTable);
   const selL = labels.find((l) => l.id === selectedLabel);
@@ -174,13 +204,32 @@ function AdminPage() {
               <p className="text-[10px] opacity-80 tracking-[0.2em] uppercase">Painel Admin</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Button size="sm" variant="secondary" onClick={addTable}>
               <Plus className="h-3 w-3" /> Mesa
             </Button>
             <Button size="sm" variant="secondary" onClick={() => setAddLabelOpen(true)}>
               <Type className="h-3 w-3" /> Texto
             </Button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) uploadBg(f);
+                if (e.target) e.target.value = "";
+              }}
+            />
+            <Button size="sm" variant="secondary" onClick={() => fileRef.current?.click()} disabled={uploading}>
+              <ImageIcon className="h-3 w-3" /> {uploading ? "..." : (bgUrl ? "Trocar fundo" : "Fundo")}
+            </Button>
+            {bgUrl && (
+              <Button size="sm" variant="ghost" onClick={removeBg} className="text-primary-foreground hover:bg-primary-foreground/10">
+                <X className="h-3 w-3" /> Remover fundo
+              </Button>
+            )}
             <Button size="sm" variant="ghost" onClick={logout} className="text-primary-foreground hover:bg-primary-foreground/10">
               <LogOut className="h-3 w-3" /> Sair
             </Button>
@@ -195,8 +244,12 @@ function AdminPage() {
           </p>
           <div
             ref={boardRef}
-            className="relative mx-auto rounded-lg border-2 border-dashed border-border bg-card touch-none"
-            style={{ aspectRatio: "1357 / 1920", maxWidth: "780px" }}
+            className="relative mx-auto rounded-lg border-2 border-dashed border-border bg-card touch-none bg-center bg-no-repeat bg-contain"
+            style={{
+              aspectRatio: "1357 / 1920",
+              maxWidth: "780px",
+              backgroundImage: bgUrl ? `url(${bgUrl})` : undefined,
+            }}
             onClick={(e) => {
               if (e.target === e.currentTarget) {
                 setSelectedTable(null); setSelectedLabel(null);
