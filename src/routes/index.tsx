@@ -162,7 +162,7 @@ function Index() {
             </div>
 
             <p className="mt-4 text-center text-xs text-muted-foreground">
-              {authed ? "Toque numa mesa para ocupar/liberar" : "Entre para gerenciar as mesas"}
+              Toque numa mesa para ocupar/liberar
             </p>
           </TabsContent>
         </Tabs>
