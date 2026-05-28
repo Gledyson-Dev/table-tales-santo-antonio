@@ -66,10 +66,6 @@ function Index() {
     : tables.filter((t) => t.seats === seatFilter);
 
   async function handleClick(t: TableRow) {
-    if (!authed) {
-      alert("Faça login para alterar o status das mesas.");
-      return;
-    }
     if (t.occupied) {
       await supabase.from("tables").update({
         occupied: false, occupied_name: null, occupied_since: null,
