@@ -19,6 +19,8 @@ function AdminPage() {
   const [ready, setReady] = useState(false);
   const [tables, setTables] = useState<TableRow[]>([]);
   const [labels, setLabels] = useState<TextLabel[]>([]);
+  const [bgUrl, setBgUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
   const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
   const [tableDraft, setTableDraft] = useState<Partial<TableRow>>({});
@@ -26,6 +28,7 @@ function AdminPage() {
   const [addLabelOpen, setAddLabelOpen] = useState(false);
   const [newLabelText, setNewLabelText] = useState("");
   const boardRef = useRef<HTMLDivElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
