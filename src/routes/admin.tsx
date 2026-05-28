@@ -204,13 +204,32 @@ function AdminPage() {
               <p className="text-[10px] opacity-80 tracking-[0.2em] uppercase">Painel Admin</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Button size="sm" variant="secondary" onClick={addTable}>
               <Plus className="h-3 w-3" /> Mesa
             </Button>
             <Button size="sm" variant="secondary" onClick={() => setAddLabelOpen(true)}>
               <Type className="h-3 w-3" /> Texto
             </Button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) uploadBg(f);
+                if (e.target) e.target.value = "";
+              }}
+            />
+            <Button size="sm" variant="secondary" onClick={() => fileRef.current?.click()} disabled={uploading}>
+              <ImageIcon className="h-3 w-3" /> {uploading ? "..." : (bgUrl ? "Trocar fundo" : "Fundo")}
+            </Button>
+            {bgUrl && (
+              <Button size="sm" variant="ghost" onClick={removeBg} className="text-primary-foreground hover:bg-primary-foreground/10">
+                <X className="h-3 w-3" /> Remover fundo
+              </Button>
+            )}
             <Button size="sm" variant="ghost" onClick={logout} className="text-primary-foreground hover:bg-primary-foreground/10">
               <LogOut className="h-3 w-3" /> Sair
             </Button>
