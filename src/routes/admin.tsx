@@ -244,8 +244,12 @@ function AdminPage() {
           </p>
           <div
             ref={boardRef}
-            className="relative mx-auto rounded-lg border-2 border-dashed border-border bg-card touch-none"
-            style={{ aspectRatio: "1357 / 1920", maxWidth: "780px" }}
+            className="relative mx-auto rounded-lg border-2 border-dashed border-border bg-card touch-none bg-center bg-no-repeat bg-contain"
+            style={{
+              aspectRatio: "1357 / 1920",
+              maxWidth: "780px",
+              backgroundImage: bgUrl ? `url(${bgUrl})` : undefined,
+            }}
             onClick={(e) => {
               if (e.target === e.currentTarget) {
                 setSelectedTable(null); setSelectedLabel(null);
