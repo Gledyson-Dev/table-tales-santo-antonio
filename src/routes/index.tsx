@@ -22,6 +22,7 @@ function Index() {
   const [authed, setAuthed] = useState(false);
   const [editing, setEditing] = useState<TableRow | null>(null);
   const [nameInput, setNameInput] = useState("");
+  const [partyInput, setPartyInput] = useState<string>("");
   const [seatFilter, setSeatFilter] = useState<"all" | number>("all");
 
   useEffect(() => {
