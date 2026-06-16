@@ -32,6 +32,47 @@ export type Database = {
         }
         Relationships: []
       }
+      table_visits: {
+        Row: {
+          created_at: string
+          ended_at: string | null
+          id: string
+          occupied_name: string | null
+          party_size: number | null
+          started_at: string
+          table_id: string | null
+          table_number: number
+        }
+        Insert: {
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          occupied_name?: string | null
+          party_size?: number | null
+          started_at?: string
+          table_id?: string | null
+          table_number: number
+        }
+        Update: {
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          occupied_name?: string | null
+          party_size?: number | null
+          started_at?: string
+          table_id?: string | null
+          table_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "table_visits_table_id_fkey"
+            columns: ["table_id"]
+            isOneToOne: false
+            referencedRelation: "tables"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tables: {
         Row: {
           created_at: string
@@ -42,6 +83,7 @@ export type Database = {
           occupied: boolean
           occupied_name: string | null
           occupied_since: string | null
+          party_size: number | null
           seats: number
           shape: string
           updated_at: string
@@ -58,6 +100,7 @@ export type Database = {
           occupied?: boolean
           occupied_name?: string | null
           occupied_since?: string | null
+          party_size?: number | null
           seats?: number
           shape?: string
           updated_at?: string
@@ -74,6 +117,7 @@ export type Database = {
           occupied?: boolean
           occupied_name?: string | null
           occupied_since?: string | null
+          party_size?: number | null
           seats?: number
           shape?: string
           updated_at?: string
