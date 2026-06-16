@@ -124,15 +124,20 @@ function Index() {
                 Gestão de Mesas
               </p>
             </div>
-            {authed ? (
-              <Link to="/admin" className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md bg-primary-foreground/10 hover:bg-primary-foreground/20 text-xs">
-                <Settings className="h-3 w-3" /> Admin
+            <div className="flex items-center gap-1.5 shrink-0">
+              <Link to="/historico" className="px-2.5 py-1.5 rounded-md bg-primary-foreground/10 hover:bg-primary-foreground/20 text-xs">
+                Histórico
               </Link>
-            ) : (
-              <Link to="/login" className="shrink-0 px-2.5 py-1.5 rounded-md bg-primary-foreground/10 hover:bg-primary-foreground/20 text-xs">
-                Entrar
-              </Link>
-            )}
+              {authed ? (
+                <Link to="/admin" className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md bg-primary-foreground/10 hover:bg-primary-foreground/20 text-xs">
+                  <Settings className="h-3 w-3" /> Admin
+                </Link>
+              ) : (
+                <Link to="/login" className="px-2.5 py-1.5 rounded-md bg-primary-foreground/10 hover:bg-primary-foreground/20 text-xs">
+                  Entrar
+                </Link>
+              )}
+            </div>
           </div>
           <div className="grid grid-cols-3 gap-1.5 text-xs">
             <Stat label="Total" value={stats.total} />
