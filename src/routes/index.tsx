@@ -71,21 +71,46 @@ function Index() {
       await supabase.from("tables").update({
         occupied: false, occupied_name: null, occupied_since: null,
       }).eq("id", t.id);
+      // close the latest open visit for this table
+      const { data: openVisits } = await supabase
+        .from("table_visits")
+        .select("id")
+        .eq("table_id", t.id)
+        .is("ended_at", null)
+        .order("started_at", { ascending: false })
+        .limit(1);
+      const openId = openVisits?.[0]?.id;
+      if (openId) {
+        await supabase.from("table_visits")
+          .update({ ended_at: new Date().toISOString() })
+          .eq("id", openId);
+      }
     } else {
       setEditing(t);
       setNameInput("");
+      setPartyInput(String(t.seats));
     }
   }
 
   async function confirmOccupy() {
     if (!editing) return;
+    const party = Math.max(1, Number(partyInput) || 1);
+    const now = new Date().toISOString();
     await supabase.from("tables").update({
       occupied: true,
       occupied_name: nameInput.trim() || null,
-      occupied_since: new Date().toISOString(),
+      occupied_since: now,
     }).eq("id", editing.id);
+    await supabase.from("table_visits").insert({
+      table_id: editing.id,
+      table_number: editing.number,
+      occupied_name: nameInput.trim() || null,
+      party_size: party,
+      started_at: now,
+    });
     setEditing(null);
     setNameInput("");
+    setPartyInput("");
   }
 
   return (
