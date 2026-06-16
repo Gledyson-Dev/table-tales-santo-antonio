@@ -22,6 +22,7 @@ function Index() {
   const [authed, setAuthed] = useState(false);
   const [editing, setEditing] = useState<TableRow | null>(null);
   const [nameInput, setNameInput] = useState("");
+  const [partyInput, setPartyInput] = useState<string>("");
   const [seatFilter, setSeatFilter] = useState<"all" | number>("all");
 
   useEffect(() => {
@@ -70,21 +71,46 @@ function Index() {
       await supabase.from("tables").update({
         occupied: false, occupied_name: null, occupied_since: null,
       }).eq("id", t.id);
+      // close the latest open visit for this table
+      const { data: openVisits } = await supabase
+        .from("table_visits")
+        .select("id")
+        .eq("table_id", t.id)
+        .is("ended_at", null)
+        .order("started_at", { ascending: false })
+        .limit(1);
+      const openId = openVisits?.[0]?.id;
+      if (openId) {
+        await supabase.from("table_visits")
+          .update({ ended_at: new Date().toISOString() })
+          .eq("id", openId);
+      }
     } else {
       setEditing(t);
       setNameInput("");
+      setPartyInput(String(t.seats));
     }
   }
 
   async function confirmOccupy() {
     if (!editing) return;
+    const party = Math.max(1, Number(partyInput) || 1);
+    const now = new Date().toISOString();
     await supabase.from("tables").update({
       occupied: true,
       occupied_name: nameInput.trim() || null,
-      occupied_since: new Date().toISOString(),
+      occupied_since: now,
     }).eq("id", editing.id);
+    await supabase.from("table_visits").insert({
+      table_id: editing.id,
+      table_number: editing.number,
+      occupied_name: nameInput.trim() || null,
+      party_size: party,
+      started_at: now,
+    });
     setEditing(null);
     setNameInput("");
+    setPartyInput("");
   }
 
   return (
@@ -98,15 +124,20 @@ function Index() {
                 Gestão de Mesas
               </p>
             </div>
-            {authed ? (
-              <Link to="/admin" className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md bg-primary-foreground/10 hover:bg-primary-foreground/20 text-xs">
-                <Settings className="h-3 w-3" /> Admin
+            <div className="flex items-center gap-1.5 shrink-0">
+              <Link to="/historico" className="px-2.5 py-1.5 rounded-md bg-primary-foreground/10 hover:bg-primary-foreground/20 text-xs">
+                Histórico
               </Link>
-            ) : (
-              <Link to="/login" className="shrink-0 px-2.5 py-1.5 rounded-md bg-primary-foreground/10 hover:bg-primary-foreground/20 text-xs">
-                Entrar
-              </Link>
-            )}
+              {authed ? (
+                <Link to="/admin" className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md bg-primary-foreground/10 hover:bg-primary-foreground/20 text-xs">
+                  <Settings className="h-3 w-3" /> Admin
+                </Link>
+              ) : (
+                <Link to="/login" className="px-2.5 py-1.5 rounded-md bg-primary-foreground/10 hover:bg-primary-foreground/20 text-xs">
+                  Entrar
+                </Link>
+              )}
+            </div>
           </div>
           <div className="grid grid-cols-3 gap-1.5 text-xs">
             <Stat label="Total" value={stats.total} />
@@ -196,12 +227,20 @@ function Index() {
               Ocupar mesa {editing?.number} ({editing?.seats} lugares)
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-2">
-            <Label htmlFor="name">Nome do cliente (opcional)</Label>
-            <Input id="name" value={nameInput} autoFocus
-              onChange={(e) => setNameInput(e.target.value)}
-              placeholder="Ex: Família Silva"
-              onKeyDown={(e) => e.key === "Enter" && confirmOccupy()} />
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <Label htmlFor="name">Nome do cliente (opcional)</Label>
+              <Input id="name" value={nameInput} autoFocus
+                onChange={(e) => setNameInput(e.target.value)}
+                placeholder="Ex: Família Silva"
+                onKeyDown={(e) => e.key === "Enter" && confirmOccupy()} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="party">Quantas pessoas</Label>
+              <Input id="party" type="number" min={1} value={partyInput}
+                onChange={(e) => setPartyInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && confirmOccupy()} />
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditing(null)}>Cancelar</Button>
