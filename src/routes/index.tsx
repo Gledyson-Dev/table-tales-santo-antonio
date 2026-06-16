@@ -227,12 +227,20 @@ function Index() {
               Ocupar mesa {editing?.number} ({editing?.seats} lugares)
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-2">
-            <Label htmlFor="name">Nome do cliente (opcional)</Label>
-            <Input id="name" value={nameInput} autoFocus
-              onChange={(e) => setNameInput(e.target.value)}
-              placeholder="Ex: Família Silva"
-              onKeyDown={(e) => e.key === "Enter" && confirmOccupy()} />
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <Label htmlFor="name">Nome do cliente (opcional)</Label>
+              <Input id="name" value={nameInput} autoFocus
+                onChange={(e) => setNameInput(e.target.value)}
+                placeholder="Ex: Família Silva"
+                onKeyDown={(e) => e.key === "Enter" && confirmOccupy()} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="party">Quantas pessoas</Label>
+              <Input id="party" type="number" min={1} value={partyInput}
+                onChange={(e) => setPartyInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && confirmOccupy()} />
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditing(null)}>Cancelar</Button>
