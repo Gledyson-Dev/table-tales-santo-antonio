@@ -14,20 +14,225 @@ export type Database = {
   }
   public: {
     Tables: {
+      menu_categories: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      menu_items: {
+        Row: {
+          available: boolean
+          category_id: string | null
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          name: string
+          price: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          available?: boolean
+          category_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          name: string
+          price?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          available?: boolean
+          category_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          name?: string
+          price?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "menu_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_items: {
+        Row: {
+          created_at: string
+          id: string
+          line_total: number
+          menu_item_id: string | null
+          name: string
+          notes: string | null
+          order_id: string
+          qty: number
+          status: string
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          line_total?: number
+          menu_item_id?: string | null
+          name: string
+          notes?: string | null
+          order_id: string
+          qty?: number
+          status?: string
+          unit_price?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          line_total?: number
+          menu_item_id?: string | null
+          name?: string
+          notes?: string | null
+          order_id?: string
+          qty?: number
+          status?: string
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_menu_item_id_fkey"
+            columns: ["menu_item_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          closed_at: string | null
+          created_at: string
+          discount: number
+          id: string
+          notes: string | null
+          opened_at: string
+          payment_method: string | null
+          service_fee: number
+          service_fee_pct: number
+          status: string
+          subtotal: number
+          table_id: string | null
+          table_number: number
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          closed_at?: string | null
+          created_at?: string
+          discount?: number
+          id?: string
+          notes?: string | null
+          opened_at?: string
+          payment_method?: string | null
+          service_fee?: number
+          service_fee_pct?: number
+          status?: string
+          subtotal?: number
+          table_id?: string | null
+          table_number: number
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          closed_at?: string | null
+          created_at?: string
+          discount?: number
+          id?: string
+          notes?: string | null
+          opened_at?: string
+          payment_method?: string | null
+          service_fee?: number
+          service_fee_pct?: number
+          status?: string
+          subtotal?: number
+          table_id?: string | null
+          table_number?: number
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_table_id_fkey"
+            columns: ["table_id"]
+            isOneToOne: false
+            referencedRelation: "tables"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       settings: {
         Row: {
           bg_image_url: string | null
+          default_theme: string
+          establishment_name: string | null
           id: number
+          logo_url: string | null
+          service_fee_pct: number
           updated_at: string
         }
         Insert: {
           bg_image_url?: string | null
+          default_theme?: string
+          establishment_name?: string | null
           id?: number
+          logo_url?: string | null
+          service_fee_pct?: number
           updated_at?: string
         }
         Update: {
           bg_image_url?: string | null
+          default_theme?: string
+          establishment_name?: string | null
           id?: number
+          logo_url?: string | null
+          service_fee_pct?: number
           updated_at?: string
         }
         Relationships: []
