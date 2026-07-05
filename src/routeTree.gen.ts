@@ -11,8 +11,11 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as HistoricoRouteImport } from './routes/historico'
+import { Route as CozinhaRouteImport } from './routes/cozinha'
+import { Route as CardapioRouteImport } from './routes/cardapio'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PedidosTableIdRouteImport } from './routes/pedidos.$tableId'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -22,6 +25,16 @@ const LoginRoute = LoginRouteImport.update({
 const HistoricoRoute = HistoricoRouteImport.update({
   id: '/historico',
   path: '/historico',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CozinhaRoute = CozinhaRouteImport.update({
+  id: '/cozinha',
+  path: '/cozinha',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CardapioRoute = CardapioRouteImport.update({
+  id: '/cardapio',
+  path: '/cardapio',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -34,39 +47,78 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PedidosTableIdRoute = PedidosTableIdRouteImport.update({
+  id: '/pedidos/$tableId',
+  path: '/pedidos/$tableId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/cardapio': typeof CardapioRoute
+  '/cozinha': typeof CozinhaRoute
   '/historico': typeof HistoricoRoute
   '/login': typeof LoginRoute
+  '/pedidos/$tableId': typeof PedidosTableIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/cardapio': typeof CardapioRoute
+  '/cozinha': typeof CozinhaRoute
   '/historico': typeof HistoricoRoute
   '/login': typeof LoginRoute
+  '/pedidos/$tableId': typeof PedidosTableIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/cardapio': typeof CardapioRoute
+  '/cozinha': typeof CozinhaRoute
   '/historico': typeof HistoricoRoute
   '/login': typeof LoginRoute
+  '/pedidos/$tableId': typeof PedidosTableIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/admin' | '/historico' | '/login'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/cardapio'
+    | '/cozinha'
+    | '/historico'
+    | '/login'
+    | '/pedidos/$tableId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/historico' | '/login'
-  id: '__root__' | '/' | '/admin' | '/historico' | '/login'
+  to:
+    | '/'
+    | '/admin'
+    | '/cardapio'
+    | '/cozinha'
+    | '/historico'
+    | '/login'
+    | '/pedidos/$tableId'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/cardapio'
+    | '/cozinha'
+    | '/historico'
+    | '/login'
+    | '/pedidos/$tableId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
+  CardapioRoute: typeof CardapioRoute
+  CozinhaRoute: typeof CozinhaRoute
   HistoricoRoute: typeof HistoricoRoute
   LoginRoute: typeof LoginRoute
+  PedidosTableIdRoute: typeof PedidosTableIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -85,6 +137,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HistoricoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cozinha': {
+      id: '/cozinha'
+      path: '/cozinha'
+      fullPath: '/cozinha'
+      preLoaderRoute: typeof CozinhaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cardapio': {
+      id: '/cardapio'
+      path: '/cardapio'
+      fullPath: '/cardapio'
+      preLoaderRoute: typeof CardapioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin': {
       id: '/admin'
       path: '/admin'
@@ -99,14 +165,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pedidos/$tableId': {
+      id: '/pedidos/$tableId'
+      path: '/pedidos/$tableId'
+      fullPath: '/pedidos/$tableId'
+      preLoaderRoute: typeof PedidosTableIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
+  CardapioRoute: CardapioRoute,
+  CozinhaRoute: CozinhaRoute,
   HistoricoRoute: HistoricoRoute,
   LoginRoute: LoginRoute,
+  PedidosTableIdRoute: PedidosTableIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
