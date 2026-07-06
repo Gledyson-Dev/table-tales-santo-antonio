@@ -1,23 +1,37 @@
 import { Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useSessionRoles, type AppRole } from "@/lib/roles";
 import { ThemeToggle } from "./ThemeToggle";
-import { LayoutGrid, History, UtensilsCrossed, ChefHat, Settings, LogIn } from "lucide-react";
+import { LayoutGrid, History, UtensilsCrossed, ChefHat, Settings, LogIn, Wallet } from "lucide-react";
 
-const NAV = [
-  { to: "/", label: "Salão", icon: LayoutGrid },
-  { to: "/cozinha", label: "Cozinha", icon: ChefHat },
-  { to: "/historico", label: "Histórico", icon: History },
-  { to: "/cardapio", label: "Cardápio", icon: UtensilsCrossed, adminOnly: true },
-] as const;
+type NavItem = {
+  to: "/" | "/cozinha" | "/cardapio" | "/caixa" | "/historico" | "/admin";
+  label: string;
+  icon: any;
+  // undefined = visible for everyone; array = requires any of these roles OR admin
+  roles?: AppRole[];
+};
+
+const NAV: NavItem[] = [
+  { to: "/", label: "Salão", icon: LayoutGrid, roles: ["waiter", "cashier"] },
+  { to: "/cozinha", label: "Cozinha", icon: ChefHat, roles: ["kitchen"] },
+  { to: "/caixa", label: "Caixa", icon: Wallet, roles: ["cashier"] },
+  { to: "/cardapio", label: "Cardápio", icon: UtensilsCrossed, roles: [] }, // admin only
+  { to: "/historico", label: "Histórico", icon: History, roles: [] }, // admin only
+];
 
 export function AppHeader({ title, subtitle, right }: { title: string; subtitle?: string; right?: React.ReactNode }) {
-  const [authed, setAuthed] = useState(false);
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setAuthed(!!data.session));
-    const { data: sub } = supabase.auth.onAuthStateChange((_, s) => setAuthed(!!s));
-    return () => sub.subscription.unsubscribe();
-  }, []);
+  const s = useSessionRoles();
+  const isAdmin = s.is("admin");
+
+  // Not authed → show only /
+  const items = !s.authed
+    ? [{ to: "/" as const, label: "Salão", icon: LayoutGrid }]
+    : NAV.filter((n) => {
+        if (isAdmin) return true;
+        if (!n.roles) return true;
+        if (n.roles.length === 0) return false; // admin only
+        return n.roles.some((r) => s.is(r));
+      });
 
   return (
     <header className="bg-primary text-primary-foreground sticky top-0 z-20 shadow">
@@ -32,23 +46,25 @@ export function AppHeader({ title, subtitle, right }: { title: string; subtitle?
           <div className="flex items-center gap-1.5 shrink-0">
             {right}
             <ThemeToggle />
-            {authed ? (
-              <Link to="/admin" title="Admin" className="inline-flex items-center justify-center h-8 w-8 rounded-md bg-primary-foreground/10 hover:bg-primary-foreground/20">
-                <Settings className="h-4 w-4" />
-              </Link>
+            {s.authed ? (
+              isAdmin && (
+                <Link to="/admin" title="Admin" className="inline-flex items-center justify-center h-8 w-8 rounded-md bg-primary-foreground/10 hover:bg-primary-foreground/20 transition-colors">
+                  <Settings className="h-4 w-4" />
+                </Link>
+              )
             ) : (
-              <Link to="/login" title="Entrar" className="inline-flex items-center justify-center h-8 w-8 rounded-md bg-primary-foreground/10 hover:bg-primary-foreground/20">
+              <Link to="/login" title="Entrar" className="inline-flex items-center justify-center h-8 w-8 rounded-md bg-primary-foreground/10 hover:bg-primary-foreground/20 transition-colors">
                 <LogIn className="h-4 w-4" />
               </Link>
             )}
           </div>
         </div>
         <nav className="flex gap-1 overflow-x-auto -mx-1 px-1 pb-0.5">
-          {NAV.filter((n) => !("adminOnly" in n && n.adminOnly) || authed).map((n) => (
+          {items.map((n) => (
             <Link
               key={n.to}
               to={n.to}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs bg-primary-foreground/10 hover:bg-primary-foreground/20 whitespace-nowrap"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs bg-primary-foreground/10 hover:bg-primary-foreground/20 whitespace-nowrap transition-colors"
               activeProps={{ className: "flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs bg-primary-foreground text-primary whitespace-nowrap font-medium" }}
               activeOptions={{ exact: true }}
             >
