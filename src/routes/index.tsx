@@ -19,7 +19,7 @@ function Index() {
   const navigate = useNavigate();
   const [tables, setTables] = useState<TableRow[]>([]);
   const [labels, setLabels] = useState<TextLabel[]>([]);
-  const [bgUrl, setBgUrl] = useState<string | null>(null);
+  const [settings, setSettings] = useState<FloorSettings>({ bg_image_url: null, bg_fit: "cover", bg_zoom: 100, bg_pos_x: 50, bg_pos_y: 50 });
   const [editing, setEditing] = useState<TableRow | null>(null);
   const [busy, setBusy] = useState<TableRow | null>(null);
   const [nameInput, setNameInput] = useState("");
