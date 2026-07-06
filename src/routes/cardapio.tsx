@@ -31,6 +31,8 @@ function CardapioPage() {
   const [activeCat, setActiveCat] = useState<string | null>(null);
   const [editing, setEditing] = useState<Partial<Item> | null>(null);
   const [newCat, setNewCat] = useState("");
+  const [uploadingImg, setUploadingImg] = useState(false);
+  const imgInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
