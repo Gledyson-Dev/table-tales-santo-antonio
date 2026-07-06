@@ -421,7 +421,7 @@ function BackgroundEditor({
 }: {
   settings: FloorSettings;
   uploading: boolean;
-  fileRef: React.RefObject<HTMLInputElement>;
+  fileRef: React.RefObject<HTMLInputElement | null>;
   onUpload: (f: File) => void;
   onRemove: () => void;
   onChange: (p: Partial<FloorSettings>) => void;
