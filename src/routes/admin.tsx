@@ -22,10 +22,10 @@ export const Route = createFileRoute("/admin")({
 
 function AdminPage() {
   const navigate = useNavigate();
-  const [ready, setReady] = useState(false);
+  const s = useSessionRoles();
   const [tables, setTables] = useState<TableRow[]>([]);
   const [labels, setLabels] = useState<TextLabel[]>([]);
-  const [bgUrl, setBgUrl] = useState<string | null>(null);
+  const [settings, setSettings] = useState<FloorSettings>({ bg_image_url: null, bg_fit: "cover", bg_zoom: 100, bg_pos_x: 50, bg_pos_y: 50 });
   const [uploading, setUploading] = useState(false);
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
   const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
@@ -33,32 +33,46 @@ function AdminPage() {
   const [labelDraft, setLabelDraft] = useState<Partial<TextLabel>>({});
   const [addLabelOpen, setAddLabelOpen] = useState(false);
   const [newLabelText, setNewLabelText] = useState("");
+  const [tab, setTab] = useState<"layout" | "fundo" | "contas">("layout");
   const boardRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  const ready = !s.loading && s.authed && s.is("admin");
+
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (!data.session) navigate({ to: "/login" });
-      else setReady(true);
-    });
-  }, [navigate]);
+    if (s.loading) return;
+    if (!s.authed) { navigate({ to: "/login" }); return; }
+    if (!s.is("admin")) { navigate({ to: "/" }); toast.error("Acesso restrito ao administrador"); }
+  }, [s.loading, s.authed, s.roles.join(",")]); // eslint-disable-line
 
   useEffect(() => {
     if (!ready) return;
     fetchTables().then(setTables);
     fetchLabels().then(setLabels);
-    fetchSettings().then((s) => setBgUrl(s.bg_image_url));
+    fetchSettings().then(setSettings);
     const ch = supabase
       .channel("admin-floor")
-      .on("postgres_changes", { event: "*", schema: "public", table: "tables" },
-        () => fetchTables().then(setTables))
-      .on("postgres_changes", { event: "*", schema: "public", table: "text_labels" },
-        () => fetchLabels().then(setLabels))
-      .on("postgres_changes", { event: "*", schema: "public", table: "settings" },
-        () => fetchSettings().then((s) => setBgUrl(s.bg_image_url)))
+      .on("postgres_changes", { event: "*", schema: "public", table: "tables" }, () => fetchTables().then(setTables))
+      .on("postgres_changes", { event: "*", schema: "public", table: "text_labels" }, () => fetchLabels().then(setLabels))
+      .on("postgres_changes", { event: "*", schema: "public", table: "settings" }, () => fetchSettings().then(setSettings))
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [ready]);
+
+  async function saveSettings(patch: Partial<FloorSettings>) {
+    const next = { ...settings, ...patch };
+    setSettings(next);
+    const { error } = await supabase.from("settings").upsert({
+      id: 1,
+      bg_image_url: next.bg_image_url,
+      bg_fit: next.bg_fit,
+      bg_zoom: next.bg_zoom,
+      bg_pos_x: next.bg_pos_x,
+      bg_pos_y: next.bg_pos_y,
+      updated_at: new Date().toISOString(),
+    } as any);
+    if (error) toast.error(error.message);
+  }
 
   async function uploadBg(file: File) {
     setUploading(true);
@@ -68,20 +82,17 @@ function AdminPage() {
       const { error: upErr } = await supabase.storage.from("floor-bg").upload(path, file, { upsert: true });
       if (upErr) throw upErr;
       const { data: pub } = supabase.storage.from("floor-bg").getPublicUrl(path);
-      const url = pub.publicUrl;
-      const { error: dbErr } = await supabase.from("settings").upsert({ id: 1, bg_image_url: url, updated_at: new Date().toISOString() });
-      if (dbErr) throw dbErr;
-      setBgUrl(url);
+      await saveSettings({ bg_image_url: pub.publicUrl, bg_fit: "cover", bg_zoom: 100, bg_pos_x: 50, bg_pos_y: 50 });
+      toast.success("Fundo atualizado");
     } catch (e: any) {
-      alert("Erro ao enviar imagem: " + (e.message ?? e));
+      toast.error("Erro ao enviar imagem: " + (e.message ?? e));
     } finally {
       setUploading(false);
     }
   }
 
   async function removeBg() {
-    await supabase.from("settings").upsert({ id: 1, bg_image_url: null, updated_at: new Date().toISOString() });
-    setBgUrl(null);
+    await saveSettings({ bg_image_url: null });
   }
 
   const selT = tables.find((t) => t.id === selectedTable);
