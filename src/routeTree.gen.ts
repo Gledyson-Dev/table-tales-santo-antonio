@@ -13,6 +13,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as HistoricoRouteImport } from './routes/historico'
 import { Route as CozinhaRouteImport } from './routes/cozinha'
 import { Route as CardapioRouteImport } from './routes/cardapio'
+import { Route as CaixaRouteImport } from './routes/caixa'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PedidosTableIdRouteImport } from './routes/pedidos.$tableId'
@@ -37,6 +38,11 @@ const CardapioRoute = CardapioRouteImport.update({
   path: '/cardapio',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CaixaRoute = CaixaRouteImport.update({
+  id: '/caixa',
+  path: '/caixa',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -56,6 +62,7 @@ const PedidosTableIdRoute = PedidosTableIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/caixa': typeof CaixaRoute
   '/cardapio': typeof CardapioRoute
   '/cozinha': typeof CozinhaRoute
   '/historico': typeof HistoricoRoute
@@ -65,6 +72,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/caixa': typeof CaixaRoute
   '/cardapio': typeof CardapioRoute
   '/cozinha': typeof CozinhaRoute
   '/historico': typeof HistoricoRoute
@@ -75,6 +83,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/caixa': typeof CaixaRoute
   '/cardapio': typeof CardapioRoute
   '/cozinha': typeof CozinhaRoute
   '/historico': typeof HistoricoRoute
@@ -86,6 +95,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/caixa'
     | '/cardapio'
     | '/cozinha'
     | '/historico'
@@ -95,6 +105,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/admin'
+    | '/caixa'
     | '/cardapio'
     | '/cozinha'
     | '/historico'
@@ -104,6 +115,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/caixa'
     | '/cardapio'
     | '/cozinha'
     | '/historico'
@@ -114,6 +126,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
+  CaixaRoute: typeof CaixaRoute
   CardapioRoute: typeof CardapioRoute
   CozinhaRoute: typeof CozinhaRoute
   HistoricoRoute: typeof HistoricoRoute
@@ -151,6 +164,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CardapioRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/caixa': {
+      id: '/caixa'
+      path: '/caixa'
+      fullPath: '/caixa'
+      preLoaderRoute: typeof CaixaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin': {
       id: '/admin'
       path: '/admin'
@@ -178,6 +198,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
+  CaixaRoute: CaixaRoute,
   CardapioRoute: CardapioRoute,
   CozinhaRoute: CozinhaRoute,
   HistoricoRoute: HistoricoRoute,

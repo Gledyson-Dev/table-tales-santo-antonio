@@ -9,9 +9,10 @@ import { Switch } from "@/components/ui/switch";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, Trash2, Pencil, EyeOff, Eye } from "lucide-react";
+import { Plus, Trash2, Pencil, EyeOff, Eye, ImagePlus, X } from "lucide-react";
 import { AppHeader } from "@/components/AppNav";
 import { brl } from "@/lib/format";
+import { useRef } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/cardapio")({ component: CardapioPage });
