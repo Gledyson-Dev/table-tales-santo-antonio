@@ -222,31 +222,9 @@ function AdminPage() {
             </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <Button size="sm" variant="secondary" onClick={addTable}>
-              <Plus className="h-3 w-3" /> Mesa
+            <Button size="sm" variant="secondary" asChild>
+              <Link to="/historico"><History className="h-3 w-3" /> Histórico</Link>
             </Button>
-            <Button size="sm" variant="secondary" onClick={() => setAddLabelOpen(true)}>
-              <Type className="h-3 w-3" /> Texto
-            </Button>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) uploadBg(f);
-                if (e.target) e.target.value = "";
-              }}
-            />
-            <Button size="sm" variant="secondary" onClick={() => fileRef.current?.click()} disabled={uploading}>
-              <ImageIcon className="h-3 w-3" /> {uploading ? "..." : (bgUrl ? "Trocar fundo" : "Fundo")}
-            </Button>
-            {bgUrl && (
-              <Button size="sm" variant="ghost" onClick={removeBg} className="text-primary-foreground hover:bg-primary-foreground/10">
-                <X className="h-3 w-3" /> Remover fundo
-              </Button>
-            )}
             <Button size="sm" variant="ghost" onClick={logout} className="text-primary-foreground hover:bg-primary-foreground/10">
               <LogOut className="h-3 w-3" /> Sair
             </Button>
@@ -254,18 +232,30 @@ function AdminPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-3 md:px-6 py-4 grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-4">
+      <Tabs value={tab} onValueChange={(v) => setTab(v as any)} className="mx-auto max-w-7xl px-3 md:px-6 py-4">
+        <TabsList>
+          <TabsTrigger value="layout"><LayoutIconInline /> Layout</TabsTrigger>
+          <TabsTrigger value="fundo"><ImageIcon className="h-3.5 w-3.5" /> Fundo</TabsTrigger>
+          <TabsTrigger value="contas"><Users className="h-3.5 w-3.5" /> Contas</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="layout" className="mt-4">
+          <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+            <p className="text-xs text-muted-foreground">Arraste mesas e textos para reposicionar · clique para editar</p>
+            <div className="flex gap-2">
+              <Button size="sm" variant="secondary" onClick={addTable}><Plus className="h-3 w-3" /> Mesa</Button>
+              <Button size="sm" variant="secondary" onClick={() => setAddLabelOpen(true)}><Type className="h-3 w-3" /> Texto</Button>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-4">
         <div>
-          <p className="text-xs text-muted-foreground mb-2 text-center">
-            Arraste mesas e textos para reposicionar · clique para editar
-          </p>
           <div
             ref={boardRef}
-            className="relative mx-auto rounded-lg border-2 border-dashed border-border bg-card touch-none bg-center bg-no-repeat bg-contain"
+            className="relative mx-auto rounded-lg border-2 border-dashed border-border bg-card touch-none"
             style={{
               aspectRatio: "1357 / 1920",
               maxWidth: "780px",
-              backgroundImage: bgUrl ? `url(${bgUrl})` : undefined,
+              ...bgStyle(settings),
             }}
             onClick={(e) => {
               if (e.target === e.currentTarget) {
