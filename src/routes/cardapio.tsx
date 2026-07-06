@@ -90,6 +90,24 @@ function CardapioPage() {
     load();
   }
 
+  async function uploadImage(file: File) {
+    if (!editing) return;
+    setUploadingImg(true);
+    try {
+      const ext = file.name.split(".").pop() ?? "jpg";
+      const path = `item-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("menu-images").upload(path, file, { upsert: true });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from("menu-images").getPublicUrl(path);
+      setEditing({ ...editing, image_url: pub.publicUrl });
+      toast.success("Imagem enviada");
+    } catch (e: any) {
+      toast.error("Erro ao enviar imagem: " + (e.message ?? e));
+    } finally {
+      setUploadingImg(false);
+    }
+  }
+
   const visible = items.filter((i) => (activeCat ? i.category_id === activeCat : true));
 
   if (!ready) return null;
