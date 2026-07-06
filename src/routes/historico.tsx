@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Download, Search } from "lucide-react";
 import { AppHeader } from "@/components/AppNav";
 import { brl, csvDownload, dt } from "@/lib/format";
+import { useSessionRoles } from "@/lib/roles";
+import { toast } from "sonner";
 import {
   BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid,
   LineChart, Line,
