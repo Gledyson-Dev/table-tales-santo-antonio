@@ -1,14 +1,20 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { fetchTables, fetchLabels, fetchSettings, type TableRow, type TextLabel } from "@/lib/floor-data";
+import { fetchTables, fetchLabels, fetchSettings, bgStyle, type TableRow, type TextLabel, type FloorSettings } from "@/lib/floor-data";
+import { useSessionRoles, type AppRole } from "@/lib/roles";
+import { listAppUsers, createAppUser, deleteAppUser } from "@/lib/admin-users.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, Type, Trash2, LogOut, ArrowLeft, Save, Image as ImageIcon, X } from "lucide-react";
+import { Plus, Type, Trash2, LogOut, ArrowLeft, Save, Image as ImageIcon, X, History, UserPlus, Users } from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
