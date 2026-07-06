@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Download, Search } from "lucide-react";
 import { AppHeader } from "@/components/AppNav";
 import { brl, csvDownload, dt } from "@/lib/format";
+import { useSessionRoles } from "@/lib/roles";
+import { toast } from "sonner";
 import {
   BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid,
   LineChart, Line,
@@ -35,12 +37,20 @@ const startOfDay = (d = new Date()) => { const x = new Date(d); x.setHours(0,0,0
 const startOfMonth = (d = new Date()) => { const x = new Date(d); x.setDate(1); x.setHours(0,0,0,0); return x; };
 
 function HistoricoPage() {
+  const navigate = useNavigate();
+  const s = useSessionRoles();
   const [visits, setVisits] = useState<Visit[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [tab, setTab] = useState<"dia" | "mes" | "custom">("dia");
   const [from, setFrom] = useState(startOfMonth().toISOString().slice(0, 10));
   const [to, setTo] = useState(new Date().toISOString().slice(0, 10));
   const [q, setQ] = useState("");
+
+  useEffect(() => {
+    if (s.loading) return;
+    if (!s.authed) { navigate({ to: "/login" }); return; }
+    if (!s.is("admin")) { toast.error("Acesso restrito"); navigate({ to: "/" }); }
+  }, [s.loading, s.authed, s.roles.join(",")]); // eslint-disable-line
 
   async function load() {
     const since = startOfMonth().toISOString();

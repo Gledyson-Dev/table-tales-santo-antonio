@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
-import { fetchTables, fetchLabels, fetchSettings, type TableRow, type TextLabel } from "@/lib/floor-data";
+import { fetchTables, fetchLabels, fetchSettings, bgStyle, type TableRow, type TextLabel, type FloorSettings } from "@/lib/floor-data";
 import { AppHeader } from "@/components/AppNav";
 import { toast } from "sonner";
 import { ClipboardList, Unlock } from "lucide-react";
@@ -19,7 +19,7 @@ function Index() {
   const navigate = useNavigate();
   const [tables, setTables] = useState<TableRow[]>([]);
   const [labels, setLabels] = useState<TextLabel[]>([]);
-  const [bgUrl, setBgUrl] = useState<string | null>(null);
+  const [settings, setSettings] = useState<FloorSettings>({ bg_image_url: null, bg_fit: "cover", bg_zoom: 100, bg_pos_x: 50, bg_pos_y: 50 });
   const [editing, setEditing] = useState<TableRow | null>(null);
   const [busy, setBusy] = useState<TableRow | null>(null);
   const [nameInput, setNameInput] = useState("");
@@ -29,12 +29,12 @@ function Index() {
   useEffect(() => {
     fetchTables().then(setTables).catch(console.error);
     fetchLabels().then(setLabels).catch(console.error);
-    fetchSettings().then((s) => setBgUrl(s.bg_image_url)).catch(console.error);
+    fetchSettings().then(setSettings).catch(console.error);
 
     const ch = supabase.channel("floor")
       .on("postgres_changes", { event: "*", schema: "public", table: "tables" }, () => fetchTables().then(setTables))
       .on("postgres_changes", { event: "*", schema: "public", table: "text_labels" }, () => fetchLabels().then(setLabels))
-      .on("postgres_changes", { event: "*", schema: "public", table: "settings" }, () => fetchSettings().then((s) => setBgUrl(s.bg_image_url)))
+      .on("postgres_changes", { event: "*", schema: "public", table: "settings" }, () => fetchSettings().then(setSettings))
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, []);
@@ -119,8 +119,8 @@ function Index() {
             </div>
 
             <div
-              className="relative mx-auto rounded-lg overflow-hidden border border-border bg-card bg-center bg-no-repeat bg-contain"
-              style={{ aspectRatio: "1357 / 1920", maxWidth: "780px", backgroundImage: bgUrl ? `url(${bgUrl})` : undefined }}
+              className="relative mx-auto rounded-lg overflow-hidden border border-border bg-card"
+              style={{ aspectRatio: "1357 / 1920", maxWidth: "780px", ...bgStyle(settings) }}
             >
               {labels.map((l) => (
                 <div key={l.id}

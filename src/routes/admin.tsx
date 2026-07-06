@@ -1,14 +1,20 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { fetchTables, fetchLabels, fetchSettings, type TableRow, type TextLabel } from "@/lib/floor-data";
+import { fetchTables, fetchLabels, fetchSettings, bgStyle, type TableRow, type TextLabel, type FloorSettings } from "@/lib/floor-data";
+import { useSessionRoles, type AppRole } from "@/lib/roles";
+import { listAppUsers, createAppUser, deleteAppUser } from "@/lib/admin-users.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, Type, Trash2, LogOut, ArrowLeft, Save, Image as ImageIcon, X } from "lucide-react";
+import { Plus, Type, Trash2, LogOut, ArrowLeft, Save, Image as ImageIcon, X, History, UserPlus, Users } from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
@@ -16,10 +22,10 @@ export const Route = createFileRoute("/admin")({
 
 function AdminPage() {
   const navigate = useNavigate();
-  const [ready, setReady] = useState(false);
+  const s = useSessionRoles();
   const [tables, setTables] = useState<TableRow[]>([]);
   const [labels, setLabels] = useState<TextLabel[]>([]);
-  const [bgUrl, setBgUrl] = useState<string | null>(null);
+  const [settings, setSettings] = useState<FloorSettings>({ bg_image_url: null, bg_fit: "cover", bg_zoom: 100, bg_pos_x: 50, bg_pos_y: 50 });
   const [uploading, setUploading] = useState(false);
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
   const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
@@ -27,32 +33,46 @@ function AdminPage() {
   const [labelDraft, setLabelDraft] = useState<Partial<TextLabel>>({});
   const [addLabelOpen, setAddLabelOpen] = useState(false);
   const [newLabelText, setNewLabelText] = useState("");
+  const [tab, setTab] = useState<"layout" | "fundo" | "contas">("layout");
   const boardRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  const ready = !s.loading && s.authed && s.is("admin");
+
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (!data.session) navigate({ to: "/login" });
-      else setReady(true);
-    });
-  }, [navigate]);
+    if (s.loading) return;
+    if (!s.authed) { navigate({ to: "/login" }); return; }
+    if (!s.is("admin")) { navigate({ to: "/" }); toast.error("Acesso restrito ao administrador"); }
+  }, [s.loading, s.authed, s.roles.join(",")]); // eslint-disable-line
 
   useEffect(() => {
     if (!ready) return;
     fetchTables().then(setTables);
     fetchLabels().then(setLabels);
-    fetchSettings().then((s) => setBgUrl(s.bg_image_url));
+    fetchSettings().then(setSettings);
     const ch = supabase
       .channel("admin-floor")
-      .on("postgres_changes", { event: "*", schema: "public", table: "tables" },
-        () => fetchTables().then(setTables))
-      .on("postgres_changes", { event: "*", schema: "public", table: "text_labels" },
-        () => fetchLabels().then(setLabels))
-      .on("postgres_changes", { event: "*", schema: "public", table: "settings" },
-        () => fetchSettings().then((s) => setBgUrl(s.bg_image_url)))
+      .on("postgres_changes", { event: "*", schema: "public", table: "tables" }, () => fetchTables().then(setTables))
+      .on("postgres_changes", { event: "*", schema: "public", table: "text_labels" }, () => fetchLabels().then(setLabels))
+      .on("postgres_changes", { event: "*", schema: "public", table: "settings" }, () => fetchSettings().then(setSettings))
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [ready]);
+
+  async function saveSettings(patch: Partial<FloorSettings>) {
+    const next = { ...settings, ...patch };
+    setSettings(next);
+    const { error } = await supabase.from("settings").upsert({
+      id: 1,
+      bg_image_url: next.bg_image_url,
+      bg_fit: next.bg_fit,
+      bg_zoom: next.bg_zoom,
+      bg_pos_x: next.bg_pos_x,
+      bg_pos_y: next.bg_pos_y,
+      updated_at: new Date().toISOString(),
+    } as any);
+    if (error) toast.error(error.message);
+  }
 
   async function uploadBg(file: File) {
     setUploading(true);
@@ -62,20 +82,17 @@ function AdminPage() {
       const { error: upErr } = await supabase.storage.from("floor-bg").upload(path, file, { upsert: true });
       if (upErr) throw upErr;
       const { data: pub } = supabase.storage.from("floor-bg").getPublicUrl(path);
-      const url = pub.publicUrl;
-      const { error: dbErr } = await supabase.from("settings").upsert({ id: 1, bg_image_url: url, updated_at: new Date().toISOString() });
-      if (dbErr) throw dbErr;
-      setBgUrl(url);
+      await saveSettings({ bg_image_url: pub.publicUrl, bg_fit: "cover", bg_zoom: 100, bg_pos_x: 50, bg_pos_y: 50 });
+      toast.success("Fundo atualizado");
     } catch (e: any) {
-      alert("Erro ao enviar imagem: " + (e.message ?? e));
+      toast.error("Erro ao enviar imagem: " + (e.message ?? e));
     } finally {
       setUploading(false);
     }
   }
 
   async function removeBg() {
-    await supabase.from("settings").upsert({ id: 1, bg_image_url: null, updated_at: new Date().toISOString() });
-    setBgUrl(null);
+    await saveSettings({ bg_image_url: null });
   }
 
   const selT = tables.find((t) => t.id === selectedTable);
@@ -205,31 +222,9 @@ function AdminPage() {
             </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <Button size="sm" variant="secondary" onClick={addTable}>
-              <Plus className="h-3 w-3" /> Mesa
+            <Button size="sm" variant="secondary" asChild>
+              <Link to="/historico"><History className="h-3 w-3" /> Histórico</Link>
             </Button>
-            <Button size="sm" variant="secondary" onClick={() => setAddLabelOpen(true)}>
-              <Type className="h-3 w-3" /> Texto
-            </Button>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) uploadBg(f);
-                if (e.target) e.target.value = "";
-              }}
-            />
-            <Button size="sm" variant="secondary" onClick={() => fileRef.current?.click()} disabled={uploading}>
-              <ImageIcon className="h-3 w-3" /> {uploading ? "..." : (bgUrl ? "Trocar fundo" : "Fundo")}
-            </Button>
-            {bgUrl && (
-              <Button size="sm" variant="ghost" onClick={removeBg} className="text-primary-foreground hover:bg-primary-foreground/10">
-                <X className="h-3 w-3" /> Remover fundo
-              </Button>
-            )}
             <Button size="sm" variant="ghost" onClick={logout} className="text-primary-foreground hover:bg-primary-foreground/10">
               <LogOut className="h-3 w-3" /> Sair
             </Button>
@@ -237,18 +232,30 @@ function AdminPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-3 md:px-6 py-4 grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-4">
+      <Tabs value={tab} onValueChange={(v) => setTab(v as any)} className="mx-auto max-w-7xl px-3 md:px-6 py-4">
+        <TabsList>
+          <TabsTrigger value="layout"><LayoutIconInline /> Layout</TabsTrigger>
+          <TabsTrigger value="fundo"><ImageIcon className="h-3.5 w-3.5" /> Fundo</TabsTrigger>
+          <TabsTrigger value="contas"><Users className="h-3.5 w-3.5" /> Contas</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="layout" className="mt-4">
+          <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+            <p className="text-xs text-muted-foreground">Arraste mesas e textos para reposicionar · clique para editar</p>
+            <div className="flex gap-2">
+              <Button size="sm" variant="secondary" onClick={addTable}><Plus className="h-3 w-3" /> Mesa</Button>
+              <Button size="sm" variant="secondary" onClick={() => setAddLabelOpen(true)}><Type className="h-3 w-3" /> Texto</Button>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-4">
         <div>
-          <p className="text-xs text-muted-foreground mb-2 text-center">
-            Arraste mesas e textos para reposicionar · clique para editar
-          </p>
           <div
             ref={boardRef}
-            className="relative mx-auto rounded-lg border-2 border-dashed border-border bg-card touch-none bg-center bg-no-repeat bg-contain"
+            className="relative mx-auto rounded-lg border-2 border-dashed border-border bg-card touch-none"
             style={{
               aspectRatio: "1357 / 1920",
               maxWidth: "780px",
-              backgroundImage: bgUrl ? `url(${bgUrl})` : undefined,
+              ...bgStyle(settings),
             }}
             onClick={(e) => {
               if (e.target === e.currentTarget) {
@@ -367,7 +374,24 @@ function AdminPage() {
             </div>
           )}
         </aside>
-      </main>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="fundo" className="mt-4">
+          <BackgroundEditor
+            settings={settings}
+            uploading={uploading}
+            fileRef={fileRef}
+            onUpload={uploadBg}
+            onRemove={removeBg}
+            onChange={saveSettings}
+          />
+        </TabsContent>
+
+        <TabsContent value="contas" className="mt-4">
+          <AccountsPanel currentUserId={s.userId} />
+        </TabsContent>
+      </Tabs>
 
       <Dialog open={addLabelOpen} onOpenChange={setAddLabelOpen}>
         <DialogContent>
@@ -384,6 +408,179 @@ function AdminPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+function LayoutIconInline() {
+  return <span className="inline-block h-3.5 w-3.5 border border-current rounded-sm mr-0" />;
+}
+
+function BackgroundEditor({
+  settings, uploading, fileRef, onUpload, onRemove, onChange,
+}: {
+  settings: FloorSettings;
+  uploading: boolean;
+  fileRef: React.RefObject<HTMLInputElement | null>;
+  onUpload: (f: File) => void;
+  onRemove: () => void;
+  onChange: (p: Partial<FloorSettings>) => void;
+}) {
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
+      <div
+        className="relative mx-auto rounded-lg border-2 border-dashed border-border bg-card"
+        style={{ aspectRatio: "1357 / 1920", maxWidth: "620px", ...bgStyle(settings) }}
+      >
+        {!settings.bg_image_url && (
+          <div className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">
+            Nenhuma imagem de fundo
+          </div>
+        )}
+      </div>
+      <aside className="bg-card border border-border rounded-lg p-4 space-y-4 h-fit">
+        <div>
+          <h3 className="font-serif text-lg mb-1">Imagem de fundo</h3>
+          <p className="text-xs text-muted-foreground">Envie uma foto/planta e ajuste como ela preenche o mapa.</p>
+        </div>
+        <input ref={fileRef} type="file" accept="image/*" className="hidden"
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) onUpload(f); if (e.target) e.target.value = ""; }} />
+        <div className="flex gap-2">
+          <Button className="flex-1" onClick={() => fileRef.current?.click()} disabled={uploading}>
+            <ImageIcon className="h-3.5 w-3.5" /> {uploading ? "Enviando..." : (settings.bg_image_url ? "Trocar" : "Enviar imagem")}
+          </Button>
+          {settings.bg_image_url && (
+            <Button variant="outline" onClick={onRemove}><X className="h-3.5 w-3.5" /></Button>
+          )}
+        </div>
+
+        {settings.bg_image_url && (
+          <>
+            <Field label="Ajuste">
+              <div className="grid grid-cols-2 gap-2">
+                <Button size="sm" variant={settings.bg_fit === "cover" ? "default" : "outline"} onClick={() => onChange({ bg_fit: "cover" })}>Preencher</Button>
+                <Button size="sm" variant={settings.bg_fit === "contain" ? "default" : "outline"} onClick={() => onChange({ bg_fit: "contain" })}>Ajustar</Button>
+              </div>
+            </Field>
+
+            <Field label={`Zoom (${Math.round(settings.bg_zoom)}%)`}>
+              <Slider min={50} max={300} step={5} value={[settings.bg_zoom]}
+                onValueChange={(v) => onChange({ bg_zoom: v[0] })} />
+            </Field>
+
+            <Field label={`Horizontal (${Math.round(settings.bg_pos_x)}%)`}>
+              <Slider min={0} max={100} step={1} value={[settings.bg_pos_x]}
+                onValueChange={(v) => onChange({ bg_pos_x: v[0] })} />
+            </Field>
+
+            <Field label={`Vertical (${Math.round(settings.bg_pos_y)}%)`}>
+              <Slider min={0} max={100} step={1} value={[settings.bg_pos_y]}
+                onValueChange={(v) => onChange({ bg_pos_y: v[0] })} />
+            </Field>
+
+            <Button size="sm" variant="ghost" onClick={() => onChange({ bg_fit: "cover", bg_zoom: 100, bg_pos_x: 50, bg_pos_y: 50 })}>
+              Redefinir ajustes
+            </Button>
+          </>
+        )}
+      </aside>
+    </div>
+  );
+}
+
+type AppUser = { id: string; email: string; created_at: string; roles: string[] };
+
+function AccountsPanel({ currentUserId }: { currentUserId: string | null }) {
+  const list = useServerFn(listAppUsers);
+  const create = useServerFn(createAppUser);
+  const remove = useServerFn(deleteAppUser);
+  const [users, setUsers] = useState<AppUser[] | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [form, setForm] = useState({ email: "", password: "", role: "waiter" as AppRole });
+
+  async function refresh() {
+    try { setUsers((await list()) as AppUser[]); }
+    catch (e: any) { toast.error(e.message ?? "Erro ao carregar contas"); }
+  }
+  useEffect(() => { refresh(); }, []); // eslint-disable-line
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.email || form.password.length < 6) { toast.error("Email válido e senha com 6+ caracteres"); return; }
+    setBusy(true);
+    try {
+      await create({ data: form });
+      toast.success("Conta criada");
+      setForm({ email: "", password: "", role: form.role });
+      refresh();
+    } catch (e: any) { toast.error(e.message ?? "Erro"); }
+    finally { setBusy(false); }
+  }
+
+  async function del(u: AppUser) {
+    if (!confirm(`Apagar conta ${u.email}?`)) return;
+    try { await remove({ data: { userId: u.id } }); toast.success("Removido"); refresh(); }
+    catch (e: any) { toast.error(e.message ?? "Erro"); }
+  }
+
+  const roleLabel: Record<string, string> = { admin: "Admin", kitchen: "Cozinha", waiter: "Garçom/Recepção", cashier: "Caixa" };
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-4">
+      <form onSubmit={submit} className="bg-card border border-border rounded-lg p-4 space-y-3 h-fit">
+        <div className="flex items-center gap-2">
+          <UserPlus className="h-4 w-4" />
+          <h3 className="font-serif text-lg">Nova conta</h3>
+        </div>
+        <Field label="Email">
+          <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="usuario@exemplo.com" required />
+        </Field>
+        <Field label="Senha (mín. 6)">
+          <Input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="••••••" required />
+        </Field>
+        <Field label="Função">
+          <select className="w-full h-9 rounded-md border border-input bg-background px-2 text-sm"
+            value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as AppRole })}>
+            <option value="waiter">Garçom / Recepção</option>
+            <option value="kitchen">Cozinha</option>
+            <option value="cashier">Caixa</option>
+            <option value="admin">Admin</option>
+          </select>
+        </Field>
+        <Button type="submit" className="w-full" disabled={busy}>
+          {busy ? "Criando..." : "Criar conta"}
+        </Button>
+        <p className="text-[10px] text-muted-foreground">
+          Cada função vê apenas suas telas. Admin vê tudo.
+        </p>
+      </form>
+
+      <div className="bg-card border border-border rounded-lg p-4">
+        <h3 className="font-serif text-lg mb-3">Contas existentes</h3>
+        {!users ? (
+          <p className="text-sm text-muted-foreground">Carregando...</p>
+        ) : users.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Nenhuma conta.</p>
+        ) : (
+          <ul className="divide-y divide-border">
+            {users.map((u) => (
+              <li key={u.id} className="py-2 flex items-center gap-2">
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm truncate">{u.email}</div>
+                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    {u.roles.length ? u.roles.map((r) => roleLabel[r] ?? r).join(" · ") : "sem função"}
+                  </div>
+                </div>
+                {u.id !== currentUserId && (
+                  <Button size="sm" variant="ghost" onClick={() => del(u)} className="text-destructive">
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }

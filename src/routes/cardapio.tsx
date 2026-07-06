@@ -9,9 +9,10 @@ import { Switch } from "@/components/ui/switch";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, Trash2, Pencil, EyeOff, Eye } from "lucide-react";
+import { Plus, Trash2, Pencil, EyeOff, Eye, ImagePlus, X } from "lucide-react";
 import { AppHeader } from "@/components/AppNav";
 import { brl } from "@/lib/format";
+import { useRef } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/cardapio")({ component: CardapioPage });
@@ -30,6 +31,8 @@ function CardapioPage() {
   const [activeCat, setActiveCat] = useState<string | null>(null);
   const [editing, setEditing] = useState<Partial<Item> | null>(null);
   const [newCat, setNewCat] = useState("");
+  const [uploadingImg, setUploadingImg] = useState(false);
+  const imgInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -87,6 +90,24 @@ function CardapioPage() {
     load();
   }
 
+  async function uploadImage(file: File) {
+    if (!editing) return;
+    setUploadingImg(true);
+    try {
+      const ext = file.name.split(".").pop() ?? "jpg";
+      const path = `item-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("menu-images").upload(path, file, { upsert: true });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from("menu-images").getPublicUrl(path);
+      setEditing({ ...editing, image_url: pub.publicUrl });
+      toast.success("Imagem enviada");
+    } catch (e: any) {
+      toast.error("Erro ao enviar imagem: " + (e.message ?? e));
+    } finally {
+      setUploadingImg(false);
+    }
+  }
+
   const visible = items.filter((i) => (activeCat ? i.category_id === activeCat : true));
 
   if (!ready) return null;
@@ -131,8 +152,13 @@ function CardapioPage() {
           ) : (
             <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
               {visible.map((i) => (
-                <li key={i.id} className={`border border-border rounded-lg p-3 bg-card ${i.available ? "" : "opacity-60"}`}>
-                  <div className="flex items-start justify-between gap-2">
+                <li key={i.id} className={`border border-border rounded-lg overflow-hidden bg-card ${i.available ? "" : "opacity-60"}`}>
+                  {i.image_url && (
+                    <div className="aspect-video bg-muted overflow-hidden">
+                      <img src={i.image_url} alt={i.name} className="w-full h-full object-cover" loading="lazy" />
+                    </div>
+                  )}
+                  <div className="p-3 flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <div className="font-medium truncate">{i.name}</div>
                       {i.description && <div className="text-xs text-muted-foreground line-clamp-2">{i.description}</div>}
@@ -165,6 +191,30 @@ function CardapioPage() {
                     <option value="">Sem categoria</option>
                     {cats.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label>Imagem</Label>
+                <div className="flex items-center gap-3">
+                  <div className="h-20 w-20 rounded-md border border-border bg-muted overflow-hidden shrink-0 flex items-center justify-center">
+                    {editing.image_url ? (
+                      <img src={editing.image_url} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <ImagePlus className="h-6 w-6 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-1 flex-1 min-w-0">
+                    <input ref={imgInputRef} type="file" accept="image/*" className="hidden"
+                      onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadImage(f); if (e.target) e.target.value = ""; }} />
+                    <Button type="button" size="sm" variant="secondary" onClick={() => imgInputRef.current?.click()} disabled={uploadingImg}>
+                      <ImagePlus className="h-3.5 w-3.5" /> {uploadingImg ? "Enviando..." : (editing.image_url ? "Trocar" : "Enviar imagem")}
+                    </Button>
+                    {editing.image_url && (
+                      <Button type="button" size="sm" variant="ghost" onClick={() => setEditing({ ...editing, image_url: null })}>
+                        <X className="h-3.5 w-3.5" /> Remover
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
               <div className="flex items-center gap-2">
