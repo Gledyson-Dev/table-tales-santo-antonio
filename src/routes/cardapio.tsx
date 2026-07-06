@@ -152,8 +152,13 @@ function CardapioPage() {
           ) : (
             <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
               {visible.map((i) => (
-                <li key={i.id} className={`border border-border rounded-lg p-3 bg-card ${i.available ? "" : "opacity-60"}`}>
-                  <div className="flex items-start justify-between gap-2">
+                <li key={i.id} className={`border border-border rounded-lg overflow-hidden bg-card ${i.available ? "" : "opacity-60"}`}>
+                  {i.image_url && (
+                    <div className="aspect-video bg-muted overflow-hidden">
+                      <img src={i.image_url} alt={i.name} className="w-full h-full object-cover" loading="lazy" />
+                    </div>
+                  )}
+                  <div className="p-3 flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <div className="font-medium truncate">{i.name}</div>
                       {i.description && <div className="text-xs text-muted-foreground line-clamp-2">{i.description}</div>}
