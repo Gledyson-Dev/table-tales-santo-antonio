@@ -29,12 +29,12 @@ function Index() {
   useEffect(() => {
     fetchTables().then(setTables).catch(console.error);
     fetchLabels().then(setLabels).catch(console.error);
-    fetchSettings().then((s) => setBgUrl(s.bg_image_url)).catch(console.error);
+    fetchSettings().then(setSettings).catch(console.error);
 
     const ch = supabase.channel("floor")
       .on("postgres_changes", { event: "*", schema: "public", table: "tables" }, () => fetchTables().then(setTables))
       .on("postgres_changes", { event: "*", schema: "public", table: "text_labels" }, () => fetchLabels().then(setLabels))
-      .on("postgres_changes", { event: "*", schema: "public", table: "settings" }, () => fetchSettings().then((s) => setBgUrl(s.bg_image_url)))
+      .on("postgres_changes", { event: "*", schema: "public", table: "settings" }, () => fetchSettings().then(setSettings))
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, []);
