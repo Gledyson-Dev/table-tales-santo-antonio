@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
-import { fetchTables, fetchLabels, fetchSettings, type TableRow, type TextLabel } from "@/lib/floor-data";
+import { fetchTables, fetchLabels, fetchSettings, bgStyle, type TableRow, type TextLabel, type FloorSettings } from "@/lib/floor-data";
 import { AppHeader } from "@/components/AppNav";
 import { toast } from "sonner";
 import { ClipboardList, Unlock } from "lucide-react";
