@@ -193,6 +193,30 @@ function CardapioPage() {
                   </select>
                 </div>
               </div>
+              <div className="space-y-1">
+                <Label>Imagem</Label>
+                <div className="flex items-center gap-3">
+                  <div className="h-20 w-20 rounded-md border border-border bg-muted overflow-hidden shrink-0 flex items-center justify-center">
+                    {editing.image_url ? (
+                      <img src={editing.image_url} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <ImagePlus className="h-6 w-6 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-1 flex-1 min-w-0">
+                    <input ref={imgInputRef} type="file" accept="image/*" className="hidden"
+                      onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadImage(f); if (e.target) e.target.value = ""; }} />
+                    <Button type="button" size="sm" variant="secondary" onClick={() => imgInputRef.current?.click()} disabled={uploadingImg}>
+                      <ImagePlus className="h-3.5 w-3.5" /> {uploadingImg ? "Enviando..." : (editing.image_url ? "Trocar" : "Enviar imagem")}
+                    </Button>
+                    {editing.image_url && (
+                      <Button type="button" size="sm" variant="ghost" onClick={() => setEditing({ ...editing, image_url: null })}>
+                        <X className="h-3.5 w-3.5" /> Remover
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
               <div className="flex items-center gap-2">
                 <Switch checked={editing.available ?? true} onCheckedChange={(v) => setEditing({ ...editing, available: v })} />
                 <Label className="!m-0">Disponível</Label>
