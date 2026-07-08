@@ -1,6 +1,5 @@
 import { Link } from "@tanstack/react-router";
 import { useSessionRoles, type AppRole } from "@/lib/roles";
-import { ThemeToggle } from "./ThemeToggle";
 import { LayoutGrid, History, UtensilsCrossed, ChefHat, Settings, LogIn, Wallet } from "lucide-react";
 
 type NavItem = {
@@ -45,7 +44,6 @@ export function AppHeader({ title, subtitle, right }: { title: string; subtitle?
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
             {right}
-            <ThemeToggle />
             {s.authed ? (
               isAdmin && (
                 <Link to="/admin" title="Admin" className="inline-flex items-center justify-center h-8 w-8 rounded-md bg-primary-foreground/10 hover:bg-primary-foreground/20 transition-colors">
