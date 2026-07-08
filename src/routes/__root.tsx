@@ -118,14 +118,6 @@ function RootShell({ children }: { children: React.ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
-  useEffect(() => {
-    if (typeof document === "undefined") return;
-    const stored = localStorage.getItem("theme");
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const dark = stored ? stored === "dark" : prefersDark;
-    document.documentElement.classList.toggle("dark", dark);
-  }, []);
-
   return (
     <QueryClientProvider client={queryClient}>
       <Outlet />
