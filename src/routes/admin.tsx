@@ -569,7 +569,7 @@ function AccountsPanel({ currentUserId }: { currentUserId: string | null }) {
             {users.map((u) => (
               <li key={u.id} className="py-2 flex items-center gap-2">
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm truncate">{u.email}</div>
+                  <div className="text-sm truncate">{u.username}</div>
                   <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
                     {u.roles.length ? u.roles.map((r) => roleLabel[r] ?? r).join(" · ") : "sem função"}
                   </div>
