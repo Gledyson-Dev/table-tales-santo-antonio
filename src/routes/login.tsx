@@ -9,10 +9,7 @@ export const Route = createFileRoute("/login")({
   component: LoginPage,
 });
 
-const ADMIN_USER = "admin";
-const ADMIN_PASS = "admin";
-const ADMIN_EMAIL = "admin@santoantonio.local";
-const ADMIN_REAL_PASS = "admin123";
+const EMAIL_DOMAIN = "santoantonio.local";
 
 function LoginPage() {
   const navigate = useNavigate();
@@ -23,7 +20,7 @@ function LoginPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/admin" });
+      if (data.session) navigate({ to: "/" });
     });
   }, [navigate]);
 
@@ -32,15 +29,12 @@ function LoginPage() {
     setError(null);
     setLoading(true);
     try {
-      if (user.trim().toLowerCase() !== ADMIN_USER || password !== ADMIN_PASS) {
-        throw new Error("Usuário ou senha incorretos");
-      }
-      const { error } = await supabase.auth.signInWithPassword({
-        email: ADMIN_EMAIL,
-        password: ADMIN_REAL_PASS,
-      });
-      if (error) throw error;
-      navigate({ to: "/admin" });
+      const u = user.trim().toLowerCase();
+      if (!u || !password) throw new Error("Preencha usuário e senha");
+      const email = u.includes("@") ? u : `${u}@${EMAIL_DOMAIN}`;
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw new Error("Usuário ou senha incorretos");
+      navigate({ to: "/" });
     } catch (err: any) {
       setError(err.message ?? "Erro ao entrar");
     } finally {
@@ -56,27 +50,24 @@ function LoginPage() {
         </Link>
         <h1 className="font-serif text-3xl mt-2 mb-1">Santo Antônio</h1>
         <p className="text-xs text-muted-foreground uppercase tracking-widest mb-6">
-          Acesso administrativo
+          Acesso ao sistema
         </p>
-        <form onSubmit={submit} className="space-y-3">
+        <form onSubmit={submit} className="space-y-3" autoComplete="off">
           <div>
             <Label htmlFor="user">Usuário</Label>
-            <Input id="user" required value={user} autoFocus
-              onChange={(e) => setUser(e.target.value)} placeholder="admin" />
+            <Input id="user" required value={user} autoFocus autoComplete="off"
+              onChange={(e) => setUser(e.target.value)} />
           </div>
           <div>
             <Label htmlFor="password">Senha</Label>
-            <Input id="password" type="password" required value={password}
-              onChange={(e) => setPassword(e.target.value)} placeholder="admin" />
+            <Input id="password" type="password" required value={password} autoComplete="current-password"
+              onChange={(e) => setPassword(e.target.value)} />
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? "..." : "Entrar"}
           </Button>
         </form>
-        <p className="mt-4 text-[10px] text-center text-muted-foreground">
-          Somente administradores podem alterar o layout.
-        </p>
       </div>
     </div>
   );
