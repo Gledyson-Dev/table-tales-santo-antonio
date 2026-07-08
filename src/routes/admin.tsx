@@ -488,7 +488,7 @@ function BackgroundEditor({
   );
 }
 
-type AppUser = { id: string; email: string; created_at: string; roles: string[] };
+type AppUser = { id: string; username: string; created_at: string; roles: string[] };
 
 function AccountsPanel({ currentUserId }: { currentUserId: string | null }) {
   const list = useServerFn(listAppUsers);
@@ -496,7 +496,7 @@ function AccountsPanel({ currentUserId }: { currentUserId: string | null }) {
   const remove = useServerFn(deleteAppUser);
   const [users, setUsers] = useState<AppUser[] | null>(null);
   const [busy, setBusy] = useState(false);
-  const [form, setForm] = useState({ email: "", password: "", role: "waiter" as AppRole });
+  const [form, setForm] = useState({ username: "", password: "", role: "waiter" as AppRole });
 
   async function refresh() {
     try { setUsers((await list()) as AppUser[]); }
@@ -506,19 +506,21 @@ function AccountsPanel({ currentUserId }: { currentUserId: string | null }) {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.email || form.password.length < 6) { toast.error("Email válido e senha com 6+ caracteres"); return; }
+    const u = form.username.trim().toLowerCase();
+    if (u.length < 3 || !/^[a-z0-9._-]+$/.test(u)) { toast.error("Usuário inválido (letras, números, . _ -)"); return; }
+    if (form.password.length < 6) { toast.error("Senha com 6+ caracteres"); return; }
     setBusy(true);
     try {
-      await create({ data: form });
+      await create({ data: { ...form, username: u } });
       toast.success("Conta criada");
-      setForm({ email: "", password: "", role: form.role });
+      setForm({ username: "", password: "", role: form.role });
       refresh();
     } catch (e: any) { toast.error(e.message ?? "Erro"); }
     finally { setBusy(false); }
   }
 
   async function del(u: AppUser) {
-    if (!confirm(`Apagar conta ${u.email}?`)) return;
+    if (!confirm(`Apagar conta ${u.username}?`)) return;
     try { await remove({ data: { userId: u.id } }); toast.success("Removido"); refresh(); }
     catch (e: any) { toast.error(e.message ?? "Erro"); }
   }
@@ -532,12 +534,13 @@ function AccountsPanel({ currentUserId }: { currentUserId: string | null }) {
           <UserPlus className="h-4 w-4" />
           <h3 className="font-serif text-lg">Nova conta</h3>
         </div>
-        <Field label="Email">
-          <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="usuario@exemplo.com" required />
+        <Field label="Usuário">
+          <Input value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} placeholder="ex: joao" autoComplete="off" required />
         </Field>
         <Field label="Senha (mín. 6)">
-          <Input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="••••••" required />
+          <Input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} autoComplete="new-password" required />
         </Field>
+
         <Field label="Função">
           <select className="w-full h-9 rounded-md border border-input bg-background px-2 text-sm"
             value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as AppRole })}>
