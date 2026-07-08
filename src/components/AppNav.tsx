@@ -1,6 +1,5 @@
 import { Link } from "@tanstack/react-router";
 import { useSessionRoles, type AppRole } from "@/lib/roles";
-import { ThemeToggle } from "./ThemeToggle";
 import { LayoutGrid, History, UtensilsCrossed, ChefHat, Settings, LogIn, Wallet } from "lucide-react";
 
 type NavItem = {
